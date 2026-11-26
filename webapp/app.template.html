@@ -3,23 +3,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,600&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: barra de marca + coluna principal de decisões por urgência + coluna lateral (matriz e registo). Paleta fixa Sofia.pt. */
+/* Conceito "cuidar à distância": a rua à noite (8 casas, janelas acesas = rotina; janela de cor = onde está o sinal)
+   por cima do trabalho de dia (cartões de decisão). Índigo-noite + luz de janela (amarelo Sofia). */
 :root{
   color-scheme: light;
-  --ink:#24173A;        /* ameixa Sofia — texto e barra */
-  --ink-2:#5E5470;      /* texto secundário */
-  --ink-3:#6F6780;      /* texto terciário (≥4.5:1 em branco) */
-  --sun:#FFC629;        /* amarelo Sofia — marca, foco */
-  --sun-soft:#FFF4CF;
-  --ground:#F5F3F8;     /* fundo lilás muito claro */
+  --night:#121830;      /* céu / barra */
+  --night-2:#1D2546;    /* fachadas */
+  --night-3:#2C3560;
+  --ink:#161B2E;        /* texto */
+  --ink-2:#474D66;
+  --ink-3:#61677E;      /* ≥4.5:1 em branco */
+  --sun:#FFC94D;        /* luz de janela — amarelo Sofia */
+  --sun-soft:#FFF3D1;
+  --ground:#EFF0EB;     /* dia: pedra fria */
   --surface:#FFFFFF;
-  --line:#E4E0EB;
-  --line-2:#D3CDDD;
+  --line:#E0E2DA;
+  --line-2:#C9CCC2;
   /* semântica de urgência — só para estado */
-  --u-hoje:#D3343F;  --u-hoje-bg:#FCE9EA;
-  --u-48:#E2711D;    --u-48-bg:#FDEEDF;
-  --u-sem:#3E64C9;   --u-sem-bg:#E7EDFB;
-  --u-ok:#1F8A5B;    --u-ok-bg:#E3F4EB;
+  --u-hoje:#D63B3F;  --u-hoje-bg:#FBE6E5;
+  --u-48:#D9731A;    --u-48-bg:#FCEEDD;
+  --u-sem:#3A66D6;   --u-sem-bg:#E6ECFB;
+  --u-ok:#23855A;    --u-ok-bg:#E1F1E8;
   --f-display:"Fraunces", Georgia, serif;
   --f-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
@@ -29,10 +33,29 @@
 body{background:var(--ground);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--sun);outline-offset:2px;border-radius:4px}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--night)}
+
+/* ---------- a rua */
+.street{background:linear-gradient(180deg,var(--night) 0%,#1A2244 100%);border-radius:16px;padding:20px 18px 0;margin-bottom:24px;color:#fff;overflow:hidden}
+.street-top{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.street .question{color:#fff}
+.street .sub{color:#B9BFD8;margin:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#B9BFD8}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.houses-row{display:flex;gap:4px;overflow-x:auto;padding:14px 2px 0;scrollbar-width:thin}
+.lot{flex:1 0 104px;display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:#fff;padding:0 0 12px;border-radius:10px;text-decoration:none}
+.lot:hover .hs,.lot:focus-visible .hs{transform:translateY(-3px)}
+.lot .hs{transition:transform .2s ease;width:100%;max-width:120px;height:auto}
+.lot .nm{font-size:13px;font-weight:600;white-space:nowrap}
+.lot .ug{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:99px;background:var(--cb);color:var(--c)}
+.lane-sep{flex:0 0 1px;background:rgba(255,255,255,.12);margin:18px 6px 40px}
+.ground-line{height:10px;background:#0D1226;margin:0 -18px;border-top:1px solid rgba(255,255,255,.08)}
+.c-body{display:grid;grid-template-columns:118px minmax(0,1fr);gap:14px;align-items:center}
+.c-body .plan-svg{width:118px;height:auto}
+@media (max-width:520px){.c-body{grid-template-columns:84px minmax(0,1fr)}.c-body .plan-svg{width:84px}}
 
 /* ---------- barra */
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:#fff;
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--night);color:#fff;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
 .bar-in{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
 .brand{display:flex;align-items:baseline;gap:10px}
@@ -79,10 +102,36 @@ select option{color:var(--ink)}
 .conf{font-size:11.5px;color:var(--ink-3)}
 .conf b{color:var(--ink-2);font-weight:600}
 .resumo{margin:0;font-size:14.5px;max-width:70ch}
-.flags{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
-.flag{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;background:#FCFBFD}
+.flags{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.flags{align-items:start}
+.flag{border:1px solid var(--line);border-radius:8px;padding:9px 11px;display:grid;grid-template-columns:minmax(0,1fr);gap:6px;background:#FCFBFD;outline-offset:1px}
 .flag .t{font-weight:600;font-size:13px}
-.flag .e{grid-column:1/-1;font-size:12px;color:var(--ink-2)}
+.flag .kpi{display:flex;align-items:baseline;gap:8px}
+.flag .kpi b{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.flag .kpi span{font-size:11.5px;color:var(--ink-3);line-height:1.25}
+.flag .e{font-size:12px;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.flag:hover .e,.flag:focus-within .e,.flag:focus .e{-webkit-line-clamp:unset;display:block}
+svg.spark{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+svg.zoomable{cursor:zoom-in}
+.why summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);padding:2px 0}
+.why[open] summary{margin-bottom:8px}
+.why .flags{margin-top:8px}
+.tip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:#fff;border-radius:7px;padding:5px 9px;font-size:12px;display:flex;flex-direction:column;line-height:1.3;white-space:nowrap}
+.tip b{font-size:14px;font-variant-numeric:tabular-nums}
+.tip span{color:#D9D2E6;font-size:11px}
+.scrim.z{z-index:24}
+.zoom{position:fixed;z-index:25;left:50%;top:50%;transform:translate(-50%,-50%);width:min(880px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--surface);border-radius:12px;padding:18px 20px;box-shadow:0 30px 80px rgba(36,23,58,.3);display:grid;gap:12px}
+.z-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.z-head h2{margin:0;font-size:22px}
+.z-head h2 small{font-size:14px;color:var(--ink-3);font-weight:500}
+.weeks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.weeks div{background:var(--ground);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column}
+.weeks div.now{background:var(--ink);color:#fff}
+.weeks span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.weeks b{font-size:22px;font-variant-numeric:tabular-nums}
+.z-note{margin:0;font-size:13px}
+.z-note .sev{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.zoom .hint{margin:0;font-size:12px;color:var(--ink-3)}
 .flag .sev{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:1px}
 .flag.sev0{background:var(--surface);border-style:dashed}
 .flag.sev0 .t{color:var(--ink-2);font-weight:500}
@@ -220,6 +269,8 @@ footer{font-size:12px;color:var(--ink-3);margin-top:30px}
 </main>
 
 <div id="drawer-root"></div>
+<div id="zoom-root"></div>
+<div id="tip" class="tip" hidden></div>
 <div id="toast-root" aria-live="polite"></div>
 
 <script>
@@ -281,31 +332,121 @@ function toast(msg, undoId) {
 }
 document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { const l = lastActive(); if (l) { e.preventDefault(); undo(l.id); } }
-  if (e.key === "Escape") closeDrawer();
+  if (e.key === "Escape") { if ($("#zoom-root").innerHTML) closeZoom(); else closeDrawer(); }
+  if (e.key === "Enter" && e.target.dataset && e.target.dataset.zoom) openZoom(e.target.dataset.zoom);
 });
 
-/* ---------- sparkline: linha diária, linha tracejada = média da semana 1, lacunas = sem dados */
-function spark(arr, {w=120, h=30, color="var(--ink)", big=false}={}) {
-  const vals = arr.filter(v => v != null); if (!vals.length) return `<svg class="spark" width="${w}" height="${h}"></svg>`;
+/* ---------- gráficos: linha diária, tracejado = média da semana 1, zona riscada = sem dados.
+   Todos registam a série para hover (data + valor) e abrem em grande com clique. */
+const SER = [];
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const fmtDay = iso => { const d = new Date(iso + "T12:00:00"); return `${d.getDate()} ${MESES[d.getMonth()]}`; };
+const fmtNum = v => v == null ? "—" : (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v*10)/10).toLocaleString("pt-PT");
+function niceTicks(lo, hi, n=4) {
+  const span = hi - lo, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1,2,2.5,5,10].map(k => k*mag).find(s => span/s <= n) || step0;
+  const t = []; for (let v = Math.ceil(lo/step)*step; v <= hi + 1e-9; v += step) t.push(+v.toFixed(6)); return t;
+}
+function spark(arr, {w=120, h=30, color="var(--ink)", axes=false, unit="", label="", zoom=""}={}) {
+  const vals = arr.filter(v => v != null); if (!vals.length) return `<svg class="spark" viewBox="0 0 ${w} ${h}"></svg>`;
   let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; }
-  const pad = big ? 4 : 3, X = i => pad + i * (w - 2*pad) / (arr.length - 1), Y = v => h - pad - (v - lo) / (hi - lo) * (h - 2*pad);
+  const m = axes ? {l:40, r:12, t:12, b:26} : {l:3, r:3, t:3, b:3};
+  if (axes) { const span = hi - lo; lo -= span*.08; hi += span*.08; }
+  const ticks = axes ? niceTicks(lo, hi) : [];
+  if (axes) { lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks.at(-1)); }
+  const X = i => m.l + i * (w - m.l - m.r) / (arr.length - 1), Y = v => h - m.b - (v - lo) / (hi - lo) * (h - m.t - m.b);
   let d = "", area = "", seg = [];
-  const flush = () => { if (seg.length) { area += `M${X(seg[0][0])},${h-pad}` + seg.map(([i,v]) => `L${X(i)},${Y(v)}`).join("") + `L${X(seg.at(-1)[0])},${h-pad}Z`; } seg = []; };
+  const flush = () => { if (seg.length) { area += `M${X(seg[0][0])},${h-m.b}` + seg.map(([i,v]) => `L${X(i)},${Y(v)}`).join("") + `L${X(seg.at(-1)[0])},${h-m.b}Z`; } seg = []; };
   arr.forEach((v,i) => { if (v == null) { flush(); return; } d += (seg.length ? "L" : "M") + X(i) + "," + Y(v); seg.push([i,v]); });
   flush();
   const b1 = arr.slice(0,7).filter(v => v != null); const base = b1.length ? b1.reduce((a,b)=>a+b,0)/b1.length : null;
   let li = arr.length - 1; while (li > 0 && arr[li] == null) li--;
   const gaps = []; let gs = null;
   arr.forEach((v,i) => { if (v == null && gs == null) gs = i; if (v != null && gs != null) { gaps.push([gs,i-1]); gs = null; } }); if (gs != null) gaps.push([gs, arr.length-1]);
-  const wk = big ? [7,14,21].map(i => `<line x1="${X(i-.5)}" x2="${X(i-.5)}" y1="0" y2="${h}" stroke="var(--line)" />`).join("") : "";
-  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="tendência de 4 semanas">
-    ${wk}
-    ${gaps.map(([a,b]) => `<rect x="${X(a)-2}" y="0" width="${X(b)-X(a)+4}" height="${h}" fill="url(#hatch)" />`).join("")}
-    <path d="${area}" fill="${color}" fill-opacity=".09"/>
-    ${base != null ? `<line x1="${pad}" x2="${w-pad}" y1="${Y(base)}" y2="${Y(base)}" stroke="var(--ink-3)" stroke-dasharray="2 3" stroke-width="1"/>` : ""}
-    <path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${X(li)}" cy="${Y(arr[li])}" r="2.6" fill="${color}"/>
+  const sid = SER.push({arr, X, Y, w, h, m, unit, label, color}) - 1;
+  const fs = axes ? 11 : 0;
+  const grid = axes ? ticks.map(t => `<line x1="${m.l}" x2="${w-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="${m.l-6}" y="${Y(t)+4}" text-anchor="end" font-size="${fs}" fill="var(--ink-3)">${fmtNum(t)}</text>`).join("")
+    + [0,7,14,21,27].map(i => `<text x="${X(i)}" y="${h-8}" text-anchor="${i===0?"start":i===27?"end":"middle"}" font-size="${fs}" fill="var(--ink-3)">${fmtDay(DATA.dias[i])}</text>`).join("")
+    + [7,14,21].map(i => `<line x1="${X(i-.5)}" x2="${X(i-.5)}" y1="${m.t}" y2="${h-m.b}" stroke="var(--line-2)" stroke-dasharray="1 3"/>`).join("")
+    + [0,1,2,3].map(k => `<text x="${X(k*7+3)}" y="${m.t+2}" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-weight="600">SEM ${k+1}</text>`).join("") : "";
+  return `<svg class="spark ${zoom?"zoomable":""}" data-sid="${sid}" ${zoom?`data-zoom="${zoom}" tabindex="0"`:""} viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}: últimos 28 dias">
+    ${grid}
+    ${gaps.map(([a,b]) => `<rect x="${X(a)-2}" y="${m.t}" width="${X(b)-X(a)+4}" height="${h-m.t-m.b}" fill="url(#hatch)"><title>Sem dados</title></rect>`).join("")}
+    <path d="${area}" fill="${color}" fill-opacity=".1"/>
+    ${base != null ? `<line x1="${m.l}" x2="${w-m.r}" y1="${Y(base)}" y2="${Y(base)}" stroke="var(--ink-2)" stroke-dasharray="3 3" stroke-width="1"/>${axes?`<text x="${w-m.r}" y="${Y(base)-5}" text-anchor="end" font-size="10" fill="var(--ink-2)">média sem. 1: ${fmtNum(base)}</text>`:""}` : ""}
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="${axes?2.2:1.7}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${X(li)}" cy="${Y(arr[li])}" r="${axes?4:2.8}" fill="${color}"/>
+    <line class="guide" x1="0" x2="0" y1="${m.t}" y2="${h-m.b}" stroke="var(--ink)" stroke-width="1" opacity="0"/>
+    <circle class="hdot" r="${axes?4.5:3.2}" fill="var(--surface)" stroke="${color}" stroke-width="2" opacity="0"/>
   </svg>`;
+}
+/* hover nos gráficos */
+document.addEventListener("pointermove", e => {
+  const s = e.target.closest && e.target.closest("svg[data-sid]"); const tip = $("#tip");
+  document.querySelectorAll("svg[data-sid] .guide[opacity='1']").forEach(g => { if (g.ownerSVGElement !== s) { g.setAttribute("opacity",0); g.nextElementSibling.setAttribute("opacity",0); } });
+  if (!s) { tip.hidden = true; return; }
+  const S = SER[s.dataset.sid]; if (!S) return;
+  const r = s.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width * S.w;
+  const i = Math.max(0, Math.min(S.arr.length - 1, Math.round((fx - S.m.l) / (S.w - S.m.l - S.m.r) * (S.arr.length - 1))));
+  const v = S.arr[i], g = s.querySelector(".guide"), dot = s.querySelector(".hdot");
+  g.setAttribute("x1", S.X(i)); g.setAttribute("x2", S.X(i)); g.setAttribute("opacity", 1);
+  if (v != null) { dot.setAttribute("cx", S.X(i)); dot.setAttribute("cy", S.Y(v)); dot.setAttribute("opacity", 1); } else dot.setAttribute("opacity", 0);
+  tip.innerHTML = `<b>${v == null ? "sem dados" : fmtNum(v) + " " + esc(S.unit)}</b><span>${fmtDay(DATA.dias[i])}${S.label ? " · " + esc(S.label) : ""}</span>`;
+  tip.hidden = false;
+  const tx = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, e.clientX - tip.offsetWidth / 2));
+  tip.style.left = tx + "px"; tip.style.top = Math.max(8, r.top + (v != null ? S.Y(v) / S.h * r.height : 0) - tip.offsetHeight - 12) + "px";
+});
+document.addEventListener("pointerleave", () => { $("#tip").hidden = true; });
+
+/* gráfico em grande */
+function openZoom(key) {
+  const [bid, metric] = key.split("|"); const b = DATA.beneficiarios.find(x => x.id === bid); if (!b) return;
+  const meta = MET[metric], fl = b.flags.filter(f => f.metric === metric), sev = fl.length ? Math.max(...fl.map(f => f.sev)) : 0;
+  const col = fl.length ? SEVC[sev] : "var(--ink-2)", s = b.semanas[metric];
+  $("#zoom-root").innerHTML = `<div class="scrim z" data-zclose></div><div class="zoom" role="dialog" aria-modal="true" aria-label="${esc(meta.l)} de ${esc(b.nome)}">
+    <div class="z-head"><div><div class="c-meta">${esc(b.nome)}</div><h2>${esc(meta.l)} <small>${esc(meta.u)}</small></h2></div><button class="close" data-zclose>Fechar</button></div>
+    <div class="weeks">${s.map((v,k) => `<div class="${k===3?"now":""}"><span>Semana ${k+1}</span><b>${fmtNum(v)}</b></div>`).join("")}</div>
+    <div class="z-chart">${spark(b.sinais[metric], {w:820, h:300, axes:true, color:col, unit:meta.u, label:meta.l})}</div>
+    ${fl.map(f => `<p class="z-note"><i class="sev" style="background:${SEVC[f.sev]}"></i><b>${esc(f.titulo)}.</b> ${esc(f.evidencia)}</p>`).join("")}
+    <p class="hint">Passe o cursor (ou o dedo) sobre o gráfico para ver cada dia. Zona riscada = sem dados, não é zero.</p></div>`;
+  $("#zoom-root .close").focus();
+}
+const closeZoom = () => { $("#zoom-root").innerHTML = ""; $("#tip").hidden = true; };
+
+/* ---------- casas: o kit é igual em todas, por isso a planta é a mesma e mostra ONDE está o sinal */
+const ROOM_OF = {peso:"wc", wc_noite:"wc", levantes_noite:"quarto", doses_falhadas:"cozinha", frigorifico:"cozinha", cozinha:"cozinha",
+  temp_interior:["sala","quarto"], spo2:"sala", sistolica:"sala", saidas:"entrada", passos:"pessoa", fc:"pessoa", queda:["sala","pessoa"]};
+const ROOM_NAME = {quarto:"quarto", wc:"WC", cozinha:"cozinha", sala:"sala", entrada:"entrada", pessoa:"a pessoa (pulseira)"};
+function roomSev(b) {
+  const r = {quarto:0, wc:0, cozinha:0, sala:0, entrada:0, pessoa:0};
+  b.flags.forEach(f => { if (f.sev <= 0) return; const k = f.regra === "R12" ? "cozinha" : ROOM_OF[f.metric]; [].concat(k || []).forEach(x => r[x] = Math.max(r[x], f.sev)); });
+  r.tech = b.saude.gaps.some(g => g.horas > 3) || b.saude.baterias.length > 0 || !!b.saude.parcial;
+  return r;
+}
+const ROOMS = {quarto:[16,46,36,27], wc:[55,46,20,27], cozinha:[78,46,26,27], sala:[16,76,59,26], entrada:[78,76,26,26]};
+function houseSVG(b, mode) {
+  const r = roomSev(b), night = mode === "night";
+  const title = Object.entries(r).filter(([k,v]) => k !== "tech" && v > 0).map(([k]) => ROOM_NAME[k]).join(", ");
+  const label = `${b.nome}: ${title ? "sinais em " + title : "sem sinais"}${r.tech ? "; kit com falhas de dados" : ""}`;
+  let out = "";
+  for (const [k,[x,y,w,h]] of Object.entries(ROOMS)) {
+    const s = r[k], col = s ? SEVC[s] : null, techDoor = k === "entrada" && r.tech;
+    if (night) {
+      const fill = techDoor ? "#0B1022" : col || "var(--sun)";
+      if (col) out += `<rect x="${x-3}" y="${y-3}" width="${w+6}" height="${h+6}" rx="4" fill="${col}" opacity=".55" filter="url(#glow)"/>`;
+      out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="${fill}" ${techDoor ? 'stroke="#8890B0" stroke-dasharray="2 2"' : `opacity="${col ? 1 : .82}"`}/>`;
+      if (!techDoor && k !== "entrada") out += `<path d="M${x+w/2} ${y}V${y+h}M${x} ${y+h/2}H${x+w}" stroke="var(--night-2)" stroke-width="1.4" opacity=".55"/>`;
+      if (k === "entrada" && !techDoor) out += `<circle cx="${x+w-6}" cy="${y+h/2}" r="1.4" fill="var(--night-2)"/>`;
+    } else {
+      out += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${col || "var(--ground)"}" fill-opacity="${col ? .22 : 1}" stroke="${col || "var(--line-2)"}" stroke-width="${col ? 1.6 : 1}" ${techDoor ? 'stroke-dasharray="2 2"' : ""}/>`;
+      out += `<text x="${x+w/2}" y="${y+h/2+3}" text-anchor="middle" font-size="7.5" font-weight="${col ? 700 : 500}" fill="${col || "var(--ink-3)"}">${k === "cozinha" ? "coz." : k === "entrada" ? "entr." : ROOM_NAME[k]}</text>`;
+    }
+  }
+  if (r.pessoa) { const c = SEVC[r.pessoa]; out += `<circle cx="64" cy="90" r="${night ? 6 : 5}" fill="${night ? "var(--night)" : "var(--surface)"}" stroke="${c}" stroke-width="2"/><circle cx="64" cy="90" r="2" fill="${c}"/>`; }
+  const roof = night ? `<path d="M4 44 L60 8 L116 44 Z" fill="var(--night-3)"/><rect x="86" y="16" width="9" height="16" fill="var(--night-3)"/>`
+                     : `<path d="M6 44 L60 10 L114 44" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-linejoin="round"/>`;
+  const body = night ? `<rect x="12" y="42" width="96" height="64" fill="var(--night-2)"/>` : `<rect x="12" y="42" width="96" height="64" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="1.5"/>`;
+  return `<svg class="${night ? "hs" : "plan-svg"}" viewBox="0 0 120 110" role="img" aria-label="${esc(label)}"><title>${esc(label)}</title>${roof}${body}${out}</svg>`;
 }
 
 /* ---------- triagem */
@@ -316,10 +457,13 @@ function card(b) {
   const u = URG[b.decisao.urgencia], st = stateOf(b.id), d = b.decisao;
   const flags = b.flags.filter(f => f.sev > 0).slice(0, 4);
   const soft = b.flags.filter(f => f.sev === 0);
-  const flagHtml = (f) => `<div class="flag ${f.sev===0?"sev0":""}">
+  const flagHtml = (f) => {
+    const has = f.metric && b.sinais[f.metric], s = has ? b.semanas[f.metric] : null, M = has ? MET[f.metric] : null;
+    return `<div class="flag ${f.sev===0?"sev0":""}" tabindex="0">
       <span class="t"><i class="sev" style="background:${SEVC[f.sev]}"></i>${esc(f.titulo)}</span>
-      ${f.metric && b.sinais[f.metric] ? spark(b.sinais[f.metric], {color:SEVC[f.sev]}) : "<span></span>"}
-      <span class="e">${esc(f.evidencia)}</span></div>`;
+      ${has ? `<div class="kpi"><b style="color:${SEVC[f.sev]}">${fmtNum(s[3] ?? s[2])}</b><span>${esc(M.u)} · sem. 4<br>era ${fmtNum(s[0])}</span></div>
+        ${spark(b.sinais[f.metric], {w:220, h:40, color:SEVC[f.sev], unit:M.u, label:M.l, zoom:b.id+"|"+f.metric})}` : ""}
+      <span class="e">${esc(f.evidencia)}</span></div>`; };
   const statusHtml = st.status ? `<span class="pill ${st.status.tipo==="adiado"?"adiado":st.status.tipo==="ignorado"?"ign":""}">${ACT[st.status.tipo]}${st.status.detalhe?": "+esc(st.status.detalhe):""} · ${hhmm(st.status.ts)}</span><button class="undo" data-undo="${st.status.id}">Desfazer</button>` : `<span>Por tratar</span>`;
   const people = d.contactos.map(c => `<div class="person"><b>${esc(c.nome)}</b> · ${esc(c.relacao)}
       <span class="ch ${c.canal!==c.canal_preferido?"ov":""}" title="${c.canal!==c.canal_preferido?"Canal preferido: "+esc(c.canal_preferido)+". A urgência obriga a ligar.":"Canal preferido"}">${esc(c.canal)}</span>
@@ -335,9 +479,11 @@ function card(b) {
       </div>
       <div class="c-right"><span class="urg">${u.label}</span><span class="conf">Confiança <b>${esc(d.confianca)}</b></span></div>
     </div>
-    <p class="resumo">${esc(d.resumo)}</p>
+    <div class="c-body">${houseSVG(b, "day")}<p class="resumo">${esc(d.resumo)}</p></div>
     ${flags.length ? `<div class="flags">${flags.map(flagHtml).join("")}</div>` : ""}
-    ${isIgnore ? `<div class="flags">${soft.map(flagHtml).join("")}</div><p class="ignore-note"><b>Porquê ignorar:</b> ${esc(d.porque)} <b>Operacional:</b> ${esc(d.acao)}</p>` : `
+    ${isIgnore ? `<p class="ignore-note"><b>Operacional:</b> ${esc(d.acao)}</p>
+      <details class="why"><summary>Ver porquê (${soft.length} ${soft.length===1?"alerta revisto":"alertas revistos"})</summary>
+        <p class="ignore-note">${esc(d.porque)}</p>${soft.length ? `<div class="flags">${soft.map(flagHtml).join("")}</div>` : ""}</details>` : `
     <div class="plan">
       <div class="who-row"><h4>Quem avisar</h4>${people}</div>
       <div><h4>O que fazer</h4><p>${esc(d.acao)}</p></div>
@@ -387,12 +533,19 @@ function logList(limit) {
 function renderTriagem() {
   const list = bens(); const by = k => list.filter(b => b.decisao.urgencia === k);
   const gapHouses = list.filter(b => b.saude.gaps.some(g => g.horas > 3) || b.saude.baterias.length).length;
+  const lanes = ["hoje","48h","semana","nenhuma"].filter(k => by(k).length);
   $("#view-triagem").innerHTML = `
-    <h1 class="question">Em quem pensar esta semana, o que fazer e o que ignorar.</h1>
-    <p class="sub">${list.length} beneficiários com kit IoT · sinais calculados de 26-out a 22-nov contra a linha de base de cada pessoa (semana 1) · ${gapHouses} casas com lacunas de dados assinaladas.</p>
-    <div class="summary">${["hoje","48h","semana","nenhuma"].map(k => `<a class="sum" href="#lane-${k}" style="--c:${URG[k].c};text-decoration:none;color:inherit"><span class="n">${by(k).length}</span><span class="l">${URG[k].lane}</span><span class="who">${by(k).map(b => b.nome.split(" ")[0]).join(", ") || "—"}</span></a>`).join("")}</div>
+    <section class="street" aria-label="As casas desta semana">
+      <div class="street-top">
+        <div><h1 class="question">Em quem pensar esta semana, o que fazer e o que ignorar.</h1>
+        <p class="sub">${list.length} casas com kit · sinais de 26-out a 22-nov contra a rotina de cada pessoa · ${gapHouses} casas com lacunas de dados</p></div>
+        <div class="legend"><span><i style="background:var(--sun)"></i>luz acesa: rotina normal</span><span><i style="background:var(--u-hoje)"></i>divisão onde está o sinal</span><span><i style="background:#0B1022;outline:1px dashed #8890B0"></i>porta escura: kit com falhas</span></div>
+      </div>
+      <div class="houses-row">${lanes.map(k => by(k).map(b => `<button class="lot" data-goto="card-${b.id}" style="--c:${URG[k].c};--cb:${URG[k].cb}">${houseSVG(b, "night")}<span class="nm">${esc(b.nome.split(" ")[0])}</span><span class="ug">${URG[k].label}</span></button>`).join("")).join('<span class="lane-sep" aria-hidden="true"></span>')}</div>
+      <div class="ground-line"></div>
+    </section>
     <div class="grid">
-      <div>${["hoje","48h","semana","nenhuma"].filter(k => by(k).length).map(k => `<section class="lane" id="lane-${k}"><h2 style="--c:${URG[k].c}"><i></i>${URG[k].lane} <small>${k==="nenhuma"?"revisto e decidido não escalar":k==="hoje"?"ligar, não mensagem":""}</small></h2><div class="cards">${by(k).map(card).join("")}</div></section>`).join("")}</div>
+      <div>${lanes.map(k => `<section class="lane" id="lane-${k}"><h2 style="--c:${URG[k].c}"><i></i>${URG[k].lane} · ${by(k).length} <small>${k==="nenhuma"?"revisto e decidido não escalar":k==="hoje"?"ligar, não mensagem":""}</small></h2><div class="cards">${by(k).map(card).join("")}</div></section>`).join("")}</div>
       <aside class="side">
         <div class="panel"><h3>Importância × urgência</h3><p class="hint">Importância = gravidade do sinal + vulnerabilidade (vive sozinho, risco de queda, dependência). Toque para ver a evidência.</p>${matrix(list)}</div>
         <div class="panel"><h3>Registo de ações</h3><p class="hint">Desfazer cria um novo registo; nada é apagado.</p>${logList(8)}</div>
@@ -460,7 +613,7 @@ function renderDrawer() {
     ${fall}
     <div class="sec"><h3>Sinais diários · 26-out → 22-nov</h3>
       <p class="hint" style="font-size:12px;color:var(--ink-3);margin:-4px 0 8px">Tracejado = média da semana 1 (linha de base da pessoa). Zona riscada = sem dados (não é zero).</p>
-      <div class="charts">${order.map(m => { const s = b.semanas[m]; const last = s[3] ?? s[2]; return `<div class="chart ${hit.has(m)?"hit":""}"><div class="h"><span>${MET[m].l}</span><b>${last ?? "—"} ${MET[m].u}</b></div>${spark(b.sinais[m], {w:200,h:46,big:true,color:hit.has(m)?SEVC[Math.max(...b.flags.filter(f=>f.metric===m).map(f=>f.sev))]:"var(--ink-2)"})}<div class="h"><span>sem. 1: ${s[0] ?? "—"}</span><span>sem. 4: ${s[3] ?? "—"}</span></div></div>`; }).join("")}</div></div>
+      <div class="charts">${order.map(m => { const s = b.semanas[m]; const last = s[3] ?? s[2]; return `<div class="chart ${hit.has(m)?"hit":""}"><div class="h"><span>${MET[m].l}</span><b>${fmtNum(last)} ${MET[m].u}</b></div>${spark(b.sinais[m], {w:220,h:50,color:hit.has(m)?SEVC[Math.max(...b.flags.filter(f=>f.metric===m).map(f=>f.sev))]:"var(--ink-2)",unit:MET[m].u,label:MET[m].l,zoom:b.id+"|"+m})}<div class="h"><span>sem. 1: ${fmtNum(s[0])}</span><span>sem. 4: ${fmtNum(s[3])}</span></div></div>`; }).join("")}</div></div>
     <div class="sec"><h3>Regras disparadas</h3>${b.flags.length ? b.flags.map(f => `<div style="font-size:13px;padding:4px 0"><code style="font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)">${f.regra}</code> <b>${esc(f.titulo)}</b>: ${esc(f.evidencia)}</div>`).join("") : `<p class="empty">Nenhuma regra disparou.</p>`}</div>
     <div class="sec"><h3>Escalonamento</h3><div class="ladder">${ladder.map((x,i) => `<span>${i+1}. ${x}</span>`).join("<i>→</i>")}</div>
       <p class="hint" style="font-size:12px;color:var(--ink-3)">Regra de canal: urgência "hoje" é sempre por telefone, mesmo que o canal preferido seja mensagem ou email.</p></div>
@@ -506,8 +659,11 @@ function setView(v) {
   ["triagem","dados","registo"].forEach(k => $("#view-"+k).hidden = k !== v); render(); window.scrollTo(0,0);
 }
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-undo],[data-open],[data-close],[data-ignore],[data-srv],[data-copy],[data-view],#replay");
+  const t = e.target.closest("[data-goto],[data-act],[data-undo],[data-open],[data-close],[data-zclose],[data-zoom],[data-ignore],[data-srv],[data-copy],[data-view],#replay");
   if (!t) return;
+  if (t.dataset.goto) { const el = document.getElementById(t.dataset.goto); el?.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"center"}); el?.animate?.([{boxShadow:"0 0 0 3px var(--sun)"},{boxShadow:"0 0 0 0 transparent"}],{duration:1400}); return; }
+  if (t.dataset.zclose !== undefined) return closeZoom();
+  if (t.dataset.zoom) return openZoom(t.dataset.zoom);
   if (t.dataset.view) return setView(t.dataset.view);
   if (t.id === "replay") return runReplay();
   if (t.dataset.close !== undefined) return closeDrawer();
@@ -520,6 +676,6 @@ document.addEventListener("click", e => {
 });
 $("#rm").innerHTML = `<option value="todas">Todas</option>` + DATA.rms.map(r => `<option value="${r.id}">${esc(r.nome)}</option>`).join("");
 $("#rm").onchange = e => { RM = e.target.value; render(); };
-document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="4" stroke="var(--line-2)" stroke-width="1.5"/></pattern></defs></svg>`);
+document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="4" stroke="var(--line-2)" stroke-width="1.5"/></pattern></defs></svg>`);
 render();
 </script>
