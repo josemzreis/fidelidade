@@ -1,0 +1,30 @@
+import pandas as pd, numpy as np, sys
+ev=pd.read_pickle(sys.argv[1]).sort_values('ts')
+ev=ev.drop_duplicates(subset=['timestamp','dispositivo_id','tipo_evento','valor'])
+ev['wk']=((ev.ts-pd.Timestamp('2026-10-26')).dt.days//7)+1
+ev['h']=ev.ts.dt.hour; ev['night']=(ev.h>=23)|(ev.h<7)
+def per(mask,agg='size',col='v'):
+    s=ev[mask]; 
+    r=s.groupby(['beneficiario_id','wk'])[col].agg(agg) if agg!='size' else s.groupby(['beneficiario_id','wk']).size()
+    return r.unstack().round(1)
+T=ev.tipo_evento
+print('STEPS/day'); print((per((T=='passos')&(ev.v<=2500),'sum')/7).round(0))
+print('DOOR opens/day'); print((per((T=='porta')&(ev.localizacao=='porta_entrada')&(ev.v==1))/7).round(1))
+print('FRIDGE opens/day'); print((per((T=='porta')&(ev.localizacao!='porta_entrada')&(ev.v==1))/7).round(1))
+print('NIGHT bed exits/night'); print((per((T=='presenca_cama')&(ev.v==0)&ev.night)/7).round(1))
+print('NIGHT wc motion/night'); print((per((T=='movimento')&(ev.localizacao=='wc')&(ev.v==1)&ev.night)/7).round(1))
+print('DOSE missed'); print(per(T=='dose_falhada'))
+print('DOSE taken'); print(per(T=='dose_tomada'))
+print('TEMP mean (quarto/sala)'); print(per((T=='temperatura')&ev.v.between(0,45),'mean'))
+print('TEMP min'); print(per((T=='temperatura')&ev.v.between(0,45),'min'))
+print('HR mean'); print(per((T=='frequencia_cardiaca')&ev.v.between(30,200),'mean'))
+print('SYS mean'); print(per((T=='tensao_sistolica')&ev.v.between(70,250),'mean'))
+print('SPO2 mean'); print(per((T=='spo2')&ev.v.between(70,100),'mean'))
+print('SPO2 min'); print(per((T=='spo2')&ev.v.between(70,100),'min'))
+print('WEIGHT mean'); print(per((T=='peso')&(ev.v>30),'mean'))
+print('KETTLE+MW uses/day'); print((per((T=='tomada_ligada')&ev.localizacao.isin(['chaleira','microondas']))/7).round(1))
+print('TV on/day'); print((per((T=='tomada_ligada')&(ev.localizacao=='tv'))/7).round(1))
+print('MOTION/day'); print((per((T=='movimento')&(ev.v==1))/7).round(0))
+print('HR count (wear proxy)/day'); print((per(T=='frequencia_cardiaca')/7/4).round(1))
+print('first wake (bed out after 5h) median hour'); s=ev[(T=='presenca_cama')&(ev.v==0)&(ev.h>=5)&(ev.h<12)]; print(s.groupby(['beneficiario_id','wk',s.ts.dt.date]).ts.min().dt.hour.groupby(['beneficiario_id','wk']).median().unstack())
+dm=ev[T=='dose_falhada'][['ts','beneficiario_id','valor']]; print(dm.groupby('beneficiario_id').apply(lambda g: list(zip(g.ts.dt.strftime('%m-%d'),g.valor))).to_string())
