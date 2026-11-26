@@ -1,0 +1,525 @@
+<title>Sofia · Triagem semanal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,600&family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra de marca + coluna principal de decisões por urgência + coluna lateral (matriz e registo). Paleta fixa Sofia.pt. */
+:root{
+  color-scheme: light;
+  --ink:#24173A;        /* ameixa Sofia — texto e barra */
+  --ink-2:#5E5470;      /* texto secundário */
+  --ink-3:#6F6780;      /* texto terciário (≥4.5:1 em branco) */
+  --sun:#FFC629;        /* amarelo Sofia — marca, foco */
+  --sun-soft:#FFF4CF;
+  --ground:#F5F3F8;     /* fundo lilás muito claro */
+  --surface:#FFFFFF;
+  --line:#E4E0EB;
+  --line-2:#D3CDDD;
+  /* semântica de urgência — só para estado */
+  --u-hoje:#D3343F;  --u-hoje-bg:#FCE9EA;
+  --u-48:#E2711D;    --u-48-bg:#FDEEDF;
+  --u-sem:#3E64C9;   --u-sem-bg:#E7EDFB;
+  --u-ok:#1F8A5B;    --u-ok-bg:#E3F4EB;
+  --f-display:"Fraunces", Georgia, serif;
+  --f-body:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--sun);outline-offset:2px;border-radius:4px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+
+/* ---------- barra */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:#fff;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+.bar-in{max-width:1320px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-family:var(--f-display);font-style:italic;font-weight:600;font-size:24px;color:var(--sun);letter-spacing:-.01em}
+.brand span{font-size:13px;color:#D9D2E6}
+.tabs{display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px}
+.tabs button{background:none;border:0;color:#D9D2E6;padding:6px 12px;border-radius:6px;font-weight:500;font-size:13px}
+.tabs button[aria-selected="true"]{background:var(--sun);color:var(--ink)}
+.bar-r{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.week{font-family:var(--f-mono);font-size:12px;color:#D9D2E6}
+select{font:inherit;font-size:13px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:5px 8px}
+select option{color:var(--ink)}
+
+.wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 60px}
+
+/* ---------- resumo */
+.question{font-family:var(--f-display);font-style:italic;font-weight:600;font-size:clamp(20px,2.4vw,26px);margin:0 0 4px;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--ink-2);margin:0 0 16px}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-align:left;border-top:3px solid var(--c)}
+.sum .n{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.sum .l{font-size:12.5px;color:var(--ink-2)}
+.sum .who{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);display:flex;flex-direction:column;gap:16px}
+
+/* ---------- lanes e cartões */
+.lane{margin-bottom:22px}
+.lane h2{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin:0 0 10px;font-weight:600}
+.lane h2 i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.lane h2 small{font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.cards{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);border-left:4px solid var(--c);padding:14px 16px;display:grid;gap:12px;transition:opacity .2s}
+.card.done{opacity:.62}
+.c-head{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.c-name{font-size:16px;font-weight:700;margin:0}
+.c-meta{font-size:12.5px;color:var(--ink-2)}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.tag{font-size:11.5px;padding:2px 7px;border-radius:99px;background:var(--ground);color:var(--ink-2);border:1px solid var(--line)}
+.tag.warn{background:var(--sun-soft);border-color:#F3DC8E;color:#6B4E00}
+.c-right{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.urg{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--cb);color:var(--c);white-space:nowrap}
+.conf{font-size:11.5px;color:var(--ink-3)}
+.conf b{color:var(--ink-2);font-weight:600}
+.resumo{margin:0;font-size:14.5px;max-width:70ch}
+.flags{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.flag{border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;background:#FCFBFD}
+.flag .t{font-weight:600;font-size:13px}
+.flag .e{grid-column:1/-1;font-size:12px;color:var(--ink-2)}
+.flag .sev{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:1px}
+.flag.sev0{background:var(--surface);border-style:dashed}
+.flag.sev0 .t{color:var(--ink-2);font-weight:500}
+svg.spark{display:block}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;background:var(--ground);border-radius:8px;padding:10px 12px}
+.plan h4{margin:0 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.plan p{margin:0;font-size:13px}
+.who-row{display:flex;flex-direction:column;gap:3px}
+.person{font-size:13px}
+.person .ch{font-family:var(--f-mono);font-size:11.5px;background:var(--surface);border:1px solid var(--line);padding:1px 6px;border-radius:4px;margin-left:4px}
+.person .ch.ov{border-color:var(--u-hoje);color:var(--u-hoje)}
+.phone{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);user-select:all}
+.copy{border:0;background:none;color:var(--ink-3);font-size:11.5px;padding:0 4px;text-decoration:underline}
+.srvs{display:flex;flex-wrap:wrap;gap:6px}
+.srv{border:1px solid var(--line-2);background:var(--surface);border-radius:6px;padding:4px 8px;font-size:12.5px;text-align:left;display:flex;gap:6px;align-items:center}
+.srv .p{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+.srv[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:#fff}
+.srv[aria-pressed="true"] .p{color:#D9D2E6}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:7px;padding:6px 12px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.primary:hover{background:#3A2A55}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink-2);font-weight:500}
+.btn.ghost:hover{color:var(--ink);background:var(--ground)}
+.status{margin-left:auto;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.status .pill{background:var(--u-ok-bg);color:var(--u-ok);padding:2px 8px;border-radius:99px;font-weight:600}
+.status .pill.adiado{background:var(--sun-soft);color:#6B4E00}
+.status .pill.ign{background:var(--ground);color:var(--ink-2)}
+.undo{border:0;background:none;color:var(--ink);text-decoration:underline;font-size:12.5px;font-weight:600;padding:0}
+.reasons{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.ignore-note{font-size:12.5px;color:var(--ink-2);margin:0}
+.link{border:0;background:none;padding:0;color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px;font-size:13px}
+
+/* ---------- lateral */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.panel h3{margin:0 0 2px;font-size:13px;font-weight:700}
+.panel .hint{font-size:12px;color:var(--ink-3);margin:0 0 10px}
+.matrix text{font-family:var(--f-body)}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.log li{font-size:12.5px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line)}
+.log li.undone{color:var(--ink-3);text-decoration:line-through}
+.log time{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.empty{font-size:12.5px;color:var(--ink-3);margin:0}
+
+/* ---------- drawer */
+.scrim{position:fixed;inset:0;background:rgba(36,23,58,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100%);background:var(--surface);z-index:21;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 18px) max(20px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 30px) 22px;box-shadow:-20px 0 60px rgba(36,23,58,.18)}
+.drawer h2{margin:0;font-size:20px}
+.close{position:sticky;top:0;float:right;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:4px 10px;font-weight:600}
+.sec{margin-top:20px}
+.sec h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px;font-weight:600}
+.charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.chart{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.chart .h{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);gap:6px}
+.chart .h b{color:var(--ink);font-variant-numeric:tabular-nums}
+.chart.hit{border-color:var(--ink-2)}
+.kv{display:grid;grid-template-columns:140px minmax(0,1fr);gap:4px 12px;font-size:13px}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0}
+.ladder{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.ladder span{background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.ladder i{color:var(--ink-3);font-style:normal}
+.timeline{list-style:none;margin:0;padding:0;position:relative}
+.timeline li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:5px 0;font-size:13px}
+.timeline time{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.timeline li.key{font-weight:600}
+.timeline li.gap{color:var(--u-hoje);font-weight:600}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.compare div{border-radius:8px;padding:10px 12px}
+.compare .was{background:var(--u-hoje-bg)}
+.compare .now{background:var(--u-ok-bg)}
+.compare b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.compare small{font-size:12px;color:var(--ink-2)}
+.replay{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.replay .clock{font-family:var(--f-mono);font-size:20px;font-weight:500}
+.alertbox{border:2px solid var(--u-hoje);background:var(--u-hoje-bg);border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:10px}
+
+/* ---------- qualidade */
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;background:#FBFAFC}
+td.num{font-variant-numeric:tabular-nums;font-family:var(--f-mono);text-align:right}
+td code{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
+.q-head{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.houses{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.house{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;font-size:12.5px;display:grid;gap:6px}
+.house .up{font-family:var(--f-mono);font-size:18px;font-weight:500}
+.meter{height:6px;background:var(--ground);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--u-ok)}
+h2.sect{font-size:15px;margin:26px 0 10px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 20px);background:var(--ink);color:#fff;padding:10px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;font-size:13px;z-index:30;box-shadow:0 10px 30px rgba(36,23,58,.3);max-width:calc(100% - 32px)}
+.toast button{border:0;background:var(--sun);color:var(--ink);font-weight:700;border-radius:6px;padding:4px 10px}
+.toast kbd{font-family:var(--f-mono);font-size:11px;color:#D9D2E6}
+footer{font-size:12px;color:var(--ink-3);margin-top:30px}
+
+@media (max-width:980px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .q-head{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .compare{grid-template-columns:1fr}
+  .kv{grid-template-columns:minmax(0,1fr)}
+  .status{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><b>Sofia.pt</b><span>Cuidar à distância · triagem</span></div>
+    <nav class="tabs" role="tablist" aria-label="Vistas">
+      <button role="tab" id="tab-triagem" aria-selected="true" data-view="triagem">Triagem</button>
+      <button role="tab" id="tab-dados" aria-selected="false" data-view="dados">Qualidade dos dados</button>
+      <button role="tab" id="tab-registo" aria-selected="false" data-view="registo">Registo de ações</button>
+    </nav>
+    <div class="bar-r">
+      <span class="week" id="week"></span>
+      <label for="rm" class="week">RM</label>
+      <select id="rm"></select>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="view-triagem"></section>
+  <section id="view-dados" hidden></section>
+  <section id="view-registo" hidden></section>
+  <footer>Protótipo para o hackathon EPIC AI · dados fictícios do caso Sofia.pt · as regras detetam, a RM decide. Cada ação fica registada e pode ser desfeita.</footer>
+</main>
+
+<div id="drawer-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<script>
+const DATA = {"gerado": "2026-11-26 12:07", "periodo": {"inicio": "2026-10-26", "fim": "2026-11-22", "semana_atual": "16–22 nov"}, "dias": ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08", "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13", "2026-11-14", "2026-11-15", "2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21", "2026-11-22"], "totais": {"eventos_brutos": 80560, "eventos_limpos": 80544, "removidos": 16, "dispositivos": 160}, "limpeza": [{"id": "L1", "problema": "Evento duplicado com IDs diferentes", "regra": "Deduplicar por (timestamp, dispositivo, tipo, valor)", "n": 1, "exemplo": "BEN-007 · 04-Nov 19:37 · porta=0", "acao": "removido"}, {"id": "L2", "problema": "Frequência cardíaca impossível (0 ou >200 bpm)", "regra": "Válido se 30–200 bpm", "n": 5, "exemplo": "BEN-003 · 30-Oct 16:14 · frequencia_cardiaca=250", "acao": "removido"}, {"id": "L3", "problema": "Temperatura de sensor em erro (−40 / 85 °C)", "regra": "Válido se 0–45 °C (valores-limite = falha do sensor)", "n": 2, "exemplo": "BEN-003 · 07-Nov 15:00 · temperatura=85", "acao": "removido"}, {"id": "L4", "problema": "Humidade 0 %", "regra": "Válido se 5–100 %", "n": 1, "exemplo": "BEN-008 · 01-Nov 03:00 · humidade=0", "acao": "removido"}, {"id": "L5", "problema": "SpO₂ fora do possível (0 / 104 %)", "regra": "Válido se 70–100 %", "n": 2, "exemplo": "BEN-004 · 04-Nov 08:21 · spo2=0", "acao": "removido"}, {"id": "L6", "problema": "Par de tensão incoerente (280/38)", "regra": "Descartar o par se sistólica ∉ 70–250 ou diastólica ∉ 40–140", "n": 2, "exemplo": "BEN-006 · 03-Nov 09:53 · tensao_sistolica=280", "acao": "removido"}, {"id": "L7", "problema": "Peso impossível (0 kg, 12,4 kg)", "regra": "Descartar se desvio >10 % da mediana pessoal", "n": 2, "exemplo": "BEN-004 · 09-Nov 07:08 · peso=0", "acao": "removido"}, {"id": "L8", "problema": "4100 passos em 15 min (com andarilho)", "regra": "Válido se ≤ 2500 passos/15 min", "n": 1, "exemplo": "BEN-005 · 31-Oct 10:59 · passos=4100", "acao": "removido"}], "nao_problemas": [{"caso": "Lacunas curtas do gateway (2–3 h)", "onde": "BEN-001/002/003/005/008", "decisao": "Ausência de dados ≠ inatividade. Não gera alerta; só gera alerta de sistema se >3 h."}, {"caso": "Gateway desligado 7 h", "onde": "BEN-008 · 18-nov 09:00→16:00", "decisao": "Lacuna técnica. Excluída do cálculo de atividade; aviso técnico, não clínico."}, {"caso": "Quedas com confiança <0,8 e atividade normal a seguir", "onde": "BEN-002 (3×), BEN-001 (1×)", "decisao": "Falsos positivos (tirar/pôr a pulseira). Registados, não escalados."}, {"caso": "Botão SOS", "onde": "BEN-002 · 06-nov 10:12", "decisao": "FC 71 e passos normais a seguir: provável toque acidental. Nunca descartado em automático; confirmar."}, {"caso": "Alarme de fumo 6 min ao jantar", "onde": "BEN-006 · 16-nov 19:52", "decisao": "Cozinhado queimado; reposto com movimento na cozinha. Entra como contexto do caso BEN-006."}, {"caso": "Queda de passos com pulseira menos usada", "onde": "BEN-002 · semana 4", "decisao": "Normalizar passos pelas horas de uso da pulseira antes de concluir."}, {"caso": "Balança sem bateria (sem pesagens)", "onde": "BEN-007 · 29-out→02-nov", "decisao": "Dias sem peso tratados como em falta, nunca como \"peso estável\"."}, {"caso": "Sensor de movimento sem bateria", "onde": "BEN-001 · cozinha 05→10-nov", "decisao": "Gateway reportou 19/20 dispositivos. Menos movimento na cozinha nesse período não é sinal."}], "beneficiarios": [{"id": "BEN-007", "nome": "Graça Pinto", "idade": 81, "sexo": "F", "local": "Alvalade, Lisboa", "vive_sozinho": true, "dependencia": "Moderada", "rm": {"id": "RM-01", "nome": "Patrícia Nunes"}, "condicoes": "Insuficiência cardíaca (FEVE reduzida); hipertensão", "mobilidade": "Autónoma com cansaço a esforços", "risco_queda": "Médio", "notas": "Internamento por descompensação em set-2026. Indicação médica: pesar-se todos os dias e avisar se aumentar mais de 2 kg numa semana.", "medicacao": ["Furosemida 40 mg · 08:00", "Bisoprolol 5 mg · 08:00", "Sacubitril/valsartan 49/51 mg · 08:00; 20:00"], "contrato": {"horas": 12.0, "orcamento": 834.38}, "ocorrencias": [{"data": "2026-09-08", "tipo": "Internamento", "texto": "Internamento de 6 dias por descompensação da insuficiência cardíaca (edemas, falta de ar, +4 kg)."}], "sinais": {"passos": [2290.0, 2210.0, 2154.0, 2220.0, 2034.0, 2237.0, 7381.0, 2277.0, 2157.0, 2064.0, 7055.0, 2128.0, 2422.0, 2002.0, 2189.0, 2264.0, 2296.0, 2250.0, 2083.0, 1926.0, 1636.0, 1969.0, 1748.0, 1876.0, 1850.0, 1737.0, 1687.0, 1558.0], "pulseira_h": [23.8, 23.5, 23.5, 23.8, 23.8, 23.8, 23.8, 23.8, 23.5, 23.8, 23.8, 23.5, 23.5, 23.8, 23.8, 23.5, 23.8, 23.5, 23.8, 23.5, 23.2, 23.2, 23.5, 24.0, 23.5, 23.5, 23.5, 23.5], "levantes_noite": [0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 4.0, 2.0, 4.0, 3.0, 2.0, 2.0, 2.0, 1.0, 0.0, 2.0, 2.0, 4.0, 2.0, 1.0, 2.0, 3.0], "wc_noite": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 5.0, 2.0, 4.0, 3.0, 2.0, 2.0, 2.0, 0.0, 0.0, 1.0, 1.0, 4.0, 1.0, 0.0, 1.0, 1.0], "doses_falhadas": [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], "doses_tomadas": [2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0], "temp_interior": [20.0, 20.0, 20.0, 20.1, 20.0, 20.0, 19.9, 20.0, 20.1, 19.9, 19.9, 20.0, 20.1, 20.0, 20.0, 19.9, 20.0, 20.0, 20.1, 20.0, 20.0, 19.9, 20.0, 20.1, 20.0, 19.9, 20.0, 20.0], "spo2": [95.0, 96.0, 97.0, 96.0, 96.0, 96.0, 95.0, 96.0, 96.0, 94.0, null, 97.0, null, 95.0, null, 96.0, 94.0, 95.0, 94.0, 95.0, 94.0, 93.0, null, 91.0, 92.0, 92.0, 93.0, 90.0], "fc": [69.2, 69.8, 70.0, 69.5, 69.0, 69.9, 71.2, 69.8, 69.5, 69.1, 70.7, 69.0, 70.3, 71.4, 71.5, 72.5, 73.2, 73.0, 74.2, 76.8, 75.7, 77.9, 77.9, 78.9, 81.0, 81.2, 82.5, 81.7], "sistolica": [137.0, 136.0, 132.0, 136.0, 136.0, 137.0, 131.0, 135.0, 134.0, 126.0, null, 128.0, null, 145.0, null, 128.0, 144.0, 143.0, 138.0, 139.0, 152.0, 136.0, 145.0, 154.0, 143.0, 150.0, 142.0, 165.0], "peso": [67.9, 67.8, 68.6, null, null, null, null, null, 68.1, 68.1, null, 68.1, 67.9, 68.4, 68.9, 68.7, 69.1, 69.8, 70.1, 70.6, 70.9, 70.8, 71.3, 71.7, 72.0, null, null, 73.0], "frigorifico": [7.0, 10.0, 15.0, 17.0, 18.0, 18.0, 7.0, 12.0, 10.0, 8.0, 10.0, 9.0, 9.0, 11.0, 10.0, 13.0, 13.0, 15.0, 10.0, 11.0, 13.0, 11.0, 10.0, 12.0, 12.0, 11.0, 7.0, 6.0], "cozinha": [1.0, 3.0, 3.0, 2.0, 3.0, 4.0, 2.0, 2.0, 4.0, 1.0, 3.0, 3.0, 3.0, 2.0, 3.0, 3.0, 2.0, 2.0, 4.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 4.0, 2.0, 3.0], "saidas": [2.0, 0.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0]}, "semanas": {"passos": [2932.3, 2872.1, 2092.0, 1775.0], "pulseira_h": [23.7, 23.7, 23.6, 23.5], "levantes_noite": [0.7, 1.4, 2.0, 2.3], "wc_noite": [1.0, 1.6, 1.9, 1.3], "doses_falhadas": [0.1, 0.1, 0.0, 0.1], "doses_tomadas": [1.9, 1.9, 2.0, 1.9], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [95.9, 95.6, 94.7, 91.8], "fc": [69.8, 70.0, 73.8, 80.2], "sistolica": [135.0, 133.6, 140.7, 147.9], "peso": [68.1, 68.1, 69.7, 71.8], "frigorifico": [13.1, 9.9, 12.1, 9.9], "cozinha": [2.6, 2.6, 2.7, 3.0], "saidas": [1.4, 1.4, 1.1, 1.1]}, "flags": [{"sev": 3, "regra": "R1", "titulo": "Peso +2.7 kg em 7 dias", "evidencia": "67.9 kg (07-Nov) → 70.6 kg (14-Nov). Indicação médica: avisar se >2 kg/semana. Último: 73.0 kg.", "metric": "peso"}, {"sev": 2, "regra": "R2", "titulo": "SpO₂ a descer: 95.9% → 91.8%", "evidencia": "Média semanal semana 1 vs semana 4; mínimo recente 90%.", "metric": "spo2"}, {"sev": 2, "regra": "R3", "titulo": "Frequência cardíaca média +10 bpm", "evidencia": "69.8 → 80.2 bpm (média semanal).", "metric": "fc"}, {"sev": 2, "regra": "R4", "titulo": "Levanta-se 2.3×/noite (era 0.7)", "evidencia": "Saídas da cama 23h–7h; idas ao WC à noite 1.0 → 1.3.", "metric": "levantes_noite"}, {"sev": 1, "regra": "R9", "titulo": "Tensão sistólica +13 mmHg", "evidencia": "135.0 → 147.9 mmHg (média semanal).", "metric": "sistolica"}], "eventos_criticos": [], "saude": {"uptime": 100.0, "gaps": [], "parcial_horas": 103, "parcial": "29-Oct → 02-Nov", "baterias": [{"dispositivo": "balanca (wc)", "min": 3, "periodo": "26-Oct → 29-Oct"}]}, "decisao": {"urgencia": "hoje", "importancia": 3, "confianca": "Alta", "resumo": "Sinais de descompensação da insuficiência cardíaca: o padrão que levou ao internamento de setembro.", "porque": "Quatro sinais independentes apontam no mesmo sentido: peso, oxigénio, pulso e noites (falta de ar deitada).", "acao": "Ligar hoje à Dra. Inês Valente para reavaliação (ajuste do diurético) e avisar o filho.", "servicos": [{"id": "SRV-06", "nome": "Acompanhamento a consultas", "preco": 18.0, "unidade": "hora", "qty": "1 h · consulta"}], "confianca_nota": "Balança sem bateria 29-out→02-nov (4 dias sem peso), mas a tendência de 3 semanas é contínua.", "contactos": [{"id": "CON-011", "nome": "Luís Pinto", "relacao": "Filho", "telefone": "+351 910 000 701", "email": "luis.pinto@exemplo.pt", "canal_preferido": "Telefone", "canal": "Telefone", "prioridade": 1}, {"id": "CON-012", "nome": "Dra. Inês Valente", "relacao": "Médica de família", "telefone": "+351 210 000 701", "email": "ines.valente@usf-exemplo.pt", "canal_preferido": "Email", "canal": "Telefone", "prioridade": 3}]}, "contactos_todos": [{"nome": "Luís Pinto", "relacao": "Filho", "canal": "Telefone", "prioridade": 1}, {"nome": "Dra. Inês Valente", "relacao": "Médica de família", "canal": "Email", "prioridade": 3}], "score": {"severidade": 3, "vulnerabilidade": 0.75, "urgencia": 4, "importancia": 3.75, "total": 49.75}}, {"id": "BEN-008", "nome": "Alberto Sousa", "idade": 90, "sexo": "M", "local": "Pontinha, Odivelas", "vive_sozinho": true, "dependencia": "Moderada", "rm": {"id": "RM-01", "nome": "Patrícia Nunes"}, "condicoes": "DPOC moderada; hipertensão", "mobilidade": "Marcha autónoma lenta", "risco_queda": "Médio", "notas": "Sensível ao frio; vive numa casa antiga sem isolamento.", "medicacao": ["Brometo de tiotrópio (inalador) · 08:00", "Indapamida 1,5 mg · 08:00"], "contrato": {"horas": 20.0, "orcamento": 1501.2}, "ocorrencias": [{"data": "2026-10-12", "tipo": "Instalação", "texto": "Kit IoT instalado. O cliente comenta que 'a caldeira está a dar o berro'."}], "sinais": {"passos": [1785.0, 1564.0, 1558.0, 1501.0, 1702.0, 1647.0, 5157.0, 1637.0, 1566.0, 1598.0, 1600.0, 1805.0, 4236.0, 1087.0, 1010.0, 1049.0, 1160.0, 981.0, 1174.0, 1145.0, 1089.0, 1146.0, 1127.0, 595.0, 1119.0, 1108.0, 1034.0, 1062.0], "pulseira_h": [23.8, 23.8, 23.8, 23.5, 23.5, 23.8, 23.8, 23.8, 23.8, 23.8, 23.8, 23.5, 23.8, 23.5, 23.2, 23.2, 23.2, 23.2, 23.8, 23.8, 23.2, 23.8, 23.8, 18.5, 23.5, 23.5, 24.0, 23.5], "levantes_noite": [0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 1.0], "wc_noite": [0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0, 0.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "doses_tomadas": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "temp_interior": [18.4, 18.3, 18.4, 18.4, 18.4, 18.3, 18.4, 18.4, 18.4, 18.4, 18.4, 18.5, 18.4, 14.6, 14.7, 14.7, 14.7, 14.7, 14.6, 14.6, 14.7, 14.6, 14.7, 14.4, 14.7, 14.7, 14.7, 14.7], "spo2": [93.0, 95.0, 94.0, 93.0, 95.0, 94.0, 95.0, 95.0, 93.0, 94.0, 94.0, 94.0, 94.0, 93.0, 95.0, 93.0, 93.0, 94.0, 93.0, null, 92.0, 92.0, 92.0, null, 92.0, 93.0, 93.0, 92.0], "fc": [70.9, 70.9, 71.0, 70.7, 71.4, 71.3, 72.4, 71.6, 69.9, 70.9, 71.2, 71.0, 72.4, 70.3, 69.5, 69.4, 70.2, 70.2, 70.0, 70.7, 69.5, 69.6, 70.0, 68.8, 70.2, 70.5, 70.6, 69.7], "sistolica": [136.0, 151.0, 137.0, 143.0, 140.0, 147.0, 139.0, 136.0, 145.0, 138.0, 139.0, 138.0, 142.0, 140.0, 140.0, 136.0, 144.0, 137.0, 145.0, null, 136.0, 137.0, 139.0, null, 143.0, 135.0, 137.0, 136.0], "peso": [null, null, 65.8, 65.8, null, 65.9, 66.2, null, 66.0, 66.0, null, 66.0, 65.6, 65.7, 66.0, 65.9, 65.6, 66.0, 65.8, 66.0, 65.7, null, 66.3, 66.5, 66.0, 65.6, 66.5, 66.0], "frigorifico": [16.0, 12.0, 8.0, 12.0, 16.0, 11.0, 9.0, 10.0, 11.0, 12.0, 11.0, 15.0, 7.0, 6.0, 8.0, 4.0, 8.0, 11.0, 15.0, 8.0, 11.0, 14.0, 11.0, 5.0, 9.0, 12.0, 10.0, 10.0], "cozinha": [4.0, 3.0, 3.0, 4.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 4.0, 3.0, 4.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 1.0, 3.0, 2.0, 1.0, 3.0, 3.0, 3.0], "saidas": [2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 1.0, 2.0, 2.0, 0.0, 0.0]}, "semanas": {"passos": [2130.6, 1932.7, 1086.9, 1027.3], "pulseira_h": [23.7, 23.7, 23.4, 22.9], "levantes_noite": [0.4, 1.4, 1.0, 0.9], "wc_noite": [0.4, 1.4, 1.0, 0.7], "doses_falhadas": [0.0, 0.1, 1.0, 1.0], "doses_tomadas": [1.0, 0.9, 0.0, 0.0], "temp_interior": [18.4, 17.9, 14.7, 14.6], "spo2": [94.1, 93.9, 93.3, 92.3], "fc": [71.2, 71.0, 69.9, 69.9], "sistolica": [141.9, 139.7, 139.7, 137.8], "peso": [65.9, 65.9, 65.9, 66.1], "frigorifico": [12.0, 10.3, 9.3, 10.1], "cozinha": [2.7, 2.7, 3.1, 2.3], "saidas": [1.7, 1.7, 1.4, 1.3]}, "flags": [{"sev": 3, "regra": "R5", "titulo": "7 doses falhadas na última semana", "evidencia": "Semana 1: 0 → semana 4: 7; 15 dias seguidos com falha.", "metric": "doses_falhadas"}, {"sev": 3, "regra": "R6", "titulo": "Casa a 14.6 °C", "evidencia": "Média interior 18.4 → 14.6 °C desde 08-Nov (recomendado ≥18 °C).", "metric": "temp_interior"}, {"sev": 2, "regra": "R2", "titulo": "SpO₂ a descer: 94.1% → 92.3%", "evidencia": "Média semanal semana 1 vs semana 4; mínimo recente 92%.", "metric": "spo2"}, {"sev": 1, "regra": "R7", "titulo": "Passos -52% vs semana 1", "evidencia": "2131 → 1027 passos/dia com a pulseira usada 23 h/dia.", "metric": "passos"}], "eventos_criticos": [], "saude": {"uptime": 99.0, "gaps": [{"inicio": "2026-11-10 17:00", "fim": "2026-11-10 19:00", "horas": 2.0}, {"inicio": "2026-11-18 09:00", "fim": "2026-11-18 16:00", "horas": 7.0}], "parcial_horas": 0, "parcial": null, "baterias": []}, "decisao": {"urgencia": "hoje", "importancia": 3, "confianca": "Alta", "resumo": "Casa fria desde 8-nov e, no mesmo dia, deixou de tomar a medicação da manhã. Com DPOC, o frio agrava a respiração.", "porque": "A temperatura caiu 4 °C de um dia para o outro nos dois sensores: avaria da caldeira (já referida na instalação).", "acao": "Ligar hoje à filha: resolver o aquecimento (aquecedor provisório) e confirmar a medicação no local.", "servicos": [{"id": "SRV-04", "nome": "Acompanhamento da toma de medicação", "preco": 12.0, "unidade": "visita (30 min)", "qty": "diária · 2 semanas"}], "confianca_nota": "Gateway desligado 7 h a 18-nov (lacuna, não inatividade). Dispensador a comunicar: as falhas são reais.", "contactos": [{"id": "CON-013", "nome": "Paula Sousa", "relacao": "Filha", "telefone": "+351 910 000 801", "email": "paula.sousa@exemplo.pt", "canal_preferido": "WhatsApp", "canal": "Telefone", "prioridade": 1}]}, "contactos_todos": [{"nome": "Paula Sousa", "relacao": "Filha", "canal": "WhatsApp", "prioridade": 1}], "score": {"severidade": 3, "vulnerabilidade": 0.75, "urgencia": 4, "importancia": 3.75, "total": 49.75}}, {"id": "BEN-005", "nome": "Isabel Martins", "idade": 84, "sexo": "F", "local": "Pragal, Almada", "vive_sozinho": true, "dependencia": "Moderada", "rm": {"id": "RM-03", "nome": "Sónia Lourenço"}, "condicoes": "Osteoporose; fratura do punho (2025)", "mobilidade": "Marcha com andarilho em casa", "risco_queda": "Alto", "notas": "Queda em casa em jun-2026, sem fratura.", "medicacao": ["Ácido alendrónico 70 mg · 08:00", "Colecalciferol · 13:00"], "contrato": {"horas": 7.5, "orcamento": 581.08}, "ocorrencias": [{"data": "2026-06-22", "tipo": "Queda", "texto": "Queda na cozinha, encontrada pela cuidadora à hora da visita. Sem fratura. Família informada."}, {"data": "2026-11-12", "tipo": "Queda", "texto": "Cuidadora encontrou a cliente no chão da sala às 18:05, à chegada para a visita. Consciente, sem lesões aparentes. Família informada."}], "sinais": {"passos": [1461.0, 1298.0, 1313.0, 4634.0, 1397.0, 1410.0, 4394.0, 4198.0, 1311.0, 1439.0, 1400.0, 1255.0, 1380.0, 3464.0, 1326.0, 1483.0, 3890.0, 506.0, 663.0, 609.0, 646.0, 640.0, 647.0, 637.0, 627.0, 629.0, 671.0, 668.0], "pulseira_h": [23.5, 23.8, 23.5, 23.8, 23.8, 23.5, 23.8, 23.5, 23.2, 23.5, 23.2, 23.5, 23.8, 23.5, 23.2, 24.0, 23.8, 23.5, 24.0, 23.8, 23.8, 23.5, 23.5, 23.8, 23.8, 23.5, 23.8, 23.8], "levantes_noite": [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 3.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 2.0, 3.0, 0.0, 2.0, 0.0, 2.0], "wc_noite": [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 1.0, 0.0, 0.0, 3.0, 0.0, 1.0, 1.0, 2.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 2.0, 3.0, 0.0, 2.0, 0.0, 1.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0], "doses_tomadas": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0], "temp_interior": [19.9, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.1, 20.0, 19.9, 19.9, 20.0, 20.0, 20.1, 20.0, 20.0, 19.9, 20.0, 20.0, 20.1, 20.1, 19.9, 19.9, 20.2, 19.9], "spo2": [95.0, 96.0, null, 95.0, null, 96.0, 96.0, 96.0, 95.0, null, 95.0, 95.0, 95.0, null, 96.0, 97.0, 96.0, 97.0, 97.0, 97.0, 97.0, 96.0, 94.0, 96.0, 96.0, 95.0, 97.0, 95.0], "fc": [73.4, 72.7, 72.9, 74.9, 73.3, 73.1, 74.4, 74.6, 72.5, 72.5, 73.5, 72.7, 73.4, 73.6, 73.3, 73.4, 73.5, 75.3, 72.3, 72.6, 72.8, 72.7, 72.5, 73.1, 72.5, 72.5, 72.6, 73.1], "sistolica": [133.0, 119.0, null, 126.0, null, 135.0, 126.0, 119.0, 124.0, null, 125.0, 125.0, 125.0, null, 122.0, 127.0, 126.0, 123.0, 133.0, 121.0, 126.0, 121.0, 122.0, 121.0, 128.0, 130.0, 125.0, 129.0], "peso": [53.8, null, 54.2, 53.9, 54.1, null, null, 53.8, null, 54.0, 53.8, 54.3, 54.1, 54.5, null, 53.8, 53.6, 53.7, null, 53.4, null, 53.9, null, null, 53.6, null, 54.0, null], "frigorifico": [9.0, 8.0, 10.0, 9.0, 13.0, 13.0, 13.0, 14.0, 8.0, 10.0, 11.0, 8.0, 22.0, 21.0, 10.0, 15.0, 8.0, 12.0, 13.0, 13.0, 7.0, 10.0, 14.0, 8.0, 9.0, 6.0, 16.0, 5.0], "cozinha": [4.0, 4.0, 3.0, 2.0, 4.0, 3.0, 4.0, 3.0, 3.0, 3.0, 3.0, 2.0, 4.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0, 4.0, 3.0, 2.0, 4.0, 3.0, 1.0, 3.0, 2.0, 2.0], "saidas": [2.0, 2.0, 2.0, 4.0, 2.0, 0.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0]}, "semanas": {"passos": [2272.4, 2063.9, 1303.3, 645.6], "pulseira_h": [23.7, 23.5, 23.7, 23.7], "levantes_noite": [0.7, 0.9, 0.6, 1.4], "wc_noite": [0.7, 0.9, 0.6, 1.3], "doses_falhadas": [0.0, 0.4, 0.1, 0.1], "doses_tomadas": [1.0, 0.6, 0.9, 0.9], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [95.6, 95.2, 96.7, 95.6], "fc": [73.5, 73.3, 73.3, 72.7], "sistolica": [127.8, 123.6, 125.4, 125.1], "peso": [54.0, 54.1, 53.6, 53.8], "frigorifico": [10.7, 13.4, 11.1, 9.7], "cozinha": [3.4, 3.0, 2.7, 2.4], "saidas": [2.0, 2.0, 1.7, 1.4]}, "flags": [{"sev": 3, "regra": "R10", "titulo": "Queda detetada 12-Nov 15:42 (confiança 0.94)", "evidencia": "Pouco movimento e FC 99→112 a seguir. Ninguém foi avisado: encontrada às 18:05 pela cuidadora.", "metric": "queda"}, {"sev": 2, "regra": "R7", "titulo": "Passos -72% vs semana 1", "evidencia": "2272 → 646 passos/dia com a pulseira usada 24 h/dia.", "metric": "passos"}], "eventos_criticos": [{"ts": "2026-11-12 15:42", "tipo": "queda_detetada", "valor": 0.94, "passos_15min": 6, "fc_depois": [99.0]}], "saude": {"uptime": 99.9, "gaps": [{"inicio": "2026-11-08 10:00", "fim": "2026-11-08 12:00", "horas": 2.0}], "parcial_horas": 0, "parcial": null, "baterias": []}, "decisao": {"urgencia": "48h", "importancia": 3, "confianca": "Alta", "resumo": "Depois da queda de 12-nov quase deixou de andar (−70 % de passos). Risco de nova queda e de perda de autonomia.", "porque": "A pulseira detetou a queda às 15:42 (confiança 0,94), mas ninguém foi avisado: foi encontrada às 18:05.", "acao": "Falar com a sobrinha, reavaliar o plano e ativar o alerta de queda em tempo real.", "servicos": [{"id": "SRV-05", "nome": "Apoio à mobilidade e estimulação física", "preco": 18.0, "unidade": "hora", "qty": "2 h/sem"}], "confianca_nota": "Pulseira usada todo o dia: a quebra de passos é real. Dose das 13:00 (vitamina D) com falhas pontuais.", "contactos": [{"id": "CON-008", "nome": "Sofia Martins", "relacao": "Sobrinha", "telefone": "+351 910 000 501", "email": "sofia.martins@exemplo.pt", "canal_preferido": "WhatsApp", "canal": "WhatsApp", "prioridade": 1}]}, "contactos_todos": [{"nome": "Sofia Martins", "relacao": "Sobrinha", "canal": "WhatsApp", "prioridade": 1}], "score": {"severidade": 3, "vulnerabilidade": 1.25, "urgencia": 3, "importancia": 4.25, "total": 40.25}}, {"id": "BEN-006", "nome": "Fernando Costa", "idade": 79, "sexo": "M", "local": "Amora, Seixal", "vive_sozinho": true, "dependencia": "Ligeira", "rm": {"id": "RM-03", "nome": "Sónia Lourenço"}, "condicoes": "Diabetes tipo 2; défice cognitivo ligeiro (em avaliação)", "mobilidade": "Autónomo", "risco_queda": "Baixo", "notas": "Viúvo desde ago-2026; a família refere que 'anda em baixo'.", "medicacao": ["Metformina 1000 mg · 08:00; 20:00", "Sertralina 50 mg · 08:00"], "contrato": {"horas": 6.0, "orcamento": 444.68}, "ocorrencias": [{"data": "2026-08-25", "tipo": "Social", "texto": "Falecimento da esposa. A filha pede maior acompanhamento."}], "sinais": {"passos": [4788.0, 1913.0, 4764.0, 2202.0, 1998.0, 1879.0, 1728.0, 2001.0, 1700.0, 5558.0, 6121.0, 1609.0, 1808.0, 1659.0, 1802.0, 1844.0, 1613.0, 1396.0, 5053.0, 1749.0, 1719.0, 1188.0, 1483.0, 3946.0, 1375.0, 1259.0, 1179.0, 1081.0], "pulseira_h": [23.2, 24.0, 23.8, 23.2, 23.8, 23.8, 23.5, 23.5, 24.0, 23.8, 23.8, 23.8, 23.8, 23.2, 23.5, 23.8, 23.5, 23.5, 23.8, 23.8, 23.5, 23.2, 23.8, 23.8, 23.8, 23.8, 23.5, 23.5], "levantes_noite": [1.0, 0.0, 2.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 2.0, 1.0, 1.0], "wc_noite": [3.0, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 1.0, 1.0, 0.0, 3.0, 1.0, 2.0, 2.0, 1.0, 1.0, 3.0, 3.0, 0.0, 4.0, 2.0, 1.0, 2.0, 2.0, 1.0, 3.0, 1.0, 2.0], "doses_falhadas": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 2.0, 2.0, 1.0, 2.0, 1.0], "doses_tomadas": [1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 1.0, 1.0, 2.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0], "temp_interior": [19.9, 20.0, 20.1, 20.1, 20.1, 20.0, 20.1, 20.1, 20.0, 20.0, 20.0, 20.0, 20.0, 20.1, 20.1, 20.0, 20.0, 20.1, 20.1, 20.0, 20.0, 19.9, 19.9, 20.0, 20.1, 19.9, 20.0, 20.0], "spo2": [95.0, 96.0, 96.0, 95.0, null, 95.0, 97.0, 97.0, 96.0, 95.0, 95.0, 95.0, null, 96.0, 96.0, 96.0, 95.0, 94.0, 96.0, null, 96.0, 96.0, null, 96.0, 94.0, 96.0, 96.0, 95.0], "fc": [76.9, 75.5, 77.3, 75.9, 75.8, 75.6, 76.0, 76.4, 75.4, 77.3, 76.9, 75.3, 76.7, 75.2, 74.8, 75.9, 75.6, 75.3, 77.0, 75.8, 76.0, 74.8, 76.3, 77.0, 75.0, 75.2, 75.6, 75.1], "sistolica": [141.0, 139.0, 146.0, 136.0, null, 133.0, 128.0, 135.0, null, 132.0, 130.0, 132.0, null, 125.0, 130.0, 129.0, 125.0, 130.0, 132.0, null, 132.0, 136.0, null, 130.0, 132.0, 130.0, 120.0, 126.0], "peso": [null, 74.0, 73.7, 74.0, 73.8, null, 73.4, 73.2, 73.5, 73.0, 73.4, null, 73.4, null, null, null, 73.1, 72.9, 72.6, null, 72.7, null, 72.5, 72.3, 72.1, 72.4, null, 71.9], "frigorifico": [11.0, 9.0, 10.0, 13.0, 7.0, 3.0, 7.0, 9.0, 7.0, 6.0, 5.0, 4.0, 7.0, 6.0, 9.0, 7.0, 6.0, 6.0, 3.0, 6.0, 5.0, 6.0, 6.0, 3.0, 1.0, 1.0, 1.0, 3.0], "cozinha": [4.0, 3.0, 2.0, 3.0, 3.0, 2.0, 1.0, 0.0, 1.0, 2.0, 1.0, 1.0, 3.0, 2.0, 2.0, 2.0, 2.0, 0.0, 1.0, 1.0, 0.0, 0.0, 2.0, 0.0, 2.0, 0.0, 0.0, 0.0], "saidas": [2.0, 0.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 3.0, 2.0]}, "semanas": {"passos": [2753.1, 2922.3, 2168.0, 1644.4], "pulseira_h": [23.6, 23.7, 23.6, 23.6], "levantes_noite": [0.7, 0.4, 0.7, 0.9], "wc_noite": [2.1, 1.4, 2.0, 1.7], "doses_falhadas": [0.1, 0.4, 0.6, 1.4], "doses_tomadas": [1.9, 1.6, 1.4, 0.6], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [95.7, 95.7, 95.5, 95.5], "fc": [76.1, 76.2, 75.8, 75.6], "sistolica": [137.2, 130.8, 129.7, 129.0], "peso": [73.8, 73.3, 72.8, 72.2], "frigorifico": [8.6, 6.3, 6.0, 3.0], "cozinha": [2.6, 1.4, 1.1, 0.6], "saidas": [1.1, 1.1, 0.9, 1.1]}, "flags": [{"sev": 3, "regra": "R5", "titulo": "10 doses falhadas na última semana", "evidencia": "Semana 1: 1 → semana 4: 10; 7 dias seguidos com falha.", "metric": "doses_falhadas"}, {"sev": 2, "regra": "R8", "titulo": "Frigorífico -65% · chaleira/micro-ondas -77%", "evidencia": "Aberturas do frigorífico 8.6 → 3.0/dia; aparelhos de cozinha 2.6 → 0.6/dia.", "metric": "frigorifico"}, {"sev": 1, "regra": "R1b", "titulo": "Perda de peso -2.1 kg em 4 semanas", "evidencia": "74.0 → 71.9 kg", "metric": "peso"}, {"sev": 1, "regra": "R7", "titulo": "Passos -40% vs semana 1", "evidencia": "2753 → 1644 passos/dia com a pulseira usada 24 h/dia.", "metric": "passos"}, {"sev": 1, "regra": "R12", "titulo": "Alarme de fumo 16-Nov 19:52 (6 min)", "evidencia": "Reposto com movimento na cozinha. Contexto: utente com défice cognitivo.", "metric": null}], "eventos_criticos": [{"ts": "2026-11-16 19:52", "tipo": "alarme_fumo", "valor": 1.0, "passos_15min": 18, "fc_depois": [79.0]}, {"ts": "2026-11-16 19:58", "tipo": "alarme_fumo", "valor": 0.0, "passos_15min": 18, "fc_depois": [79.0]}], "saude": {"uptime": 100.0, "gaps": [], "parcial_horas": 0, "parcial": null, "baterias": []}, "decisao": {"urgencia": "48h", "importancia": 3, "confianca": "Alta", "resumo": "Sinais de abandono do autocuidado 3 meses após ficar viúvo: deixou de comer e de tomar a medicação.", "porque": "Falha doses de metformina e sertralina, quase não abre o frigorífico nem usa a cozinha e perdeu peso. Alarme de fumo a 16-nov.", "acao": "Ligar à filha e propor reforço do plano (só tem 6 h/semana). Sinalizar ao médico (humor e défice cognitivo).", "servicos": [{"id": "SRV-04", "nome": "Acompanhamento da toma de medicação", "preco": 12.0, "unidade": "visita (30 min)", "qty": "diária"}, {"id": "SRV-03", "nome": "Preparação de refeições", "preco": 16.0, "unidade": "hora", "qty": "3×/sem"}, {"id": "SRV-01", "nome": "Companhia e supervisão", "preco": 15.0, "unidade": "hora", "qty": "2 h/sem"}], "confianca_nota": "Vários sensores independentes (dispensador, frigorífico, tomadas, balança) concordam.", "contactos": [{"id": "CON-009", "nome": "Marta Costa", "relacao": "Filha", "telefone": "+351 910 000 601", "email": "marta.costa@exemplo.pt", "canal_preferido": "Email", "canal": "Telefone", "prioridade": 1}, {"id": "CON-010", "nome": "Vizinho - Sr. Jorge", "relacao": "Vizinho", "telefone": "+351 910 000 602", "email": null, "canal_preferido": "Telefone", "canal": "Telefone", "prioridade": 2}]}, "contactos_todos": [{"nome": "Marta Costa", "relacao": "Filha", "canal": "Email", "prioridade": 1}, {"nome": "Vizinho - Sr. Jorge", "relacao": "Vizinho", "canal": "Telefone", "prioridade": 2}], "score": {"severidade": 3, "vulnerabilidade": 0.5, "urgencia": 3, "importancia": 3.5, "total": 39.5}}, {"id": "BEN-004", "nome": "Manuel Gaspar", "idade": 88, "sexo": "M", "local": "Venteira, Amadora", "vive_sozinho": true, "dependencia": "Moderada", "rm": {"id": "RM-01", "nome": "Patrícia Nunes"}, "condicoes": "Diabetes tipo 2; hiperplasia benigna da próstata", "mobilidade": "Marcha autónoma lenta", "risco_queda": "Médio", "notas": "Historial de infeção urinária (mar-2026).", "medicacao": ["Metformina 850 mg · 08:00; 20:00", "Tansulosina 0,4 mg · 20:00"], "contrato": {"horas": 15.0, "orcamento": 1068.2}, "ocorrencias": [{"data": "2026-03-14", "tipo": "Saúde", "texto": "Infeção urinária diagnosticada pelo médico de família; antibiótico 7 dias. Nas semanas anteriores levantava-se muitas vezes à noite."}], "sinais": {"passos": [7445.0, 6365.0, 2118.0, 2032.0, 2069.0, 2039.0, 1884.0, 1982.0, 4825.0, 1983.0, 5219.0, 1952.0, 1905.0, 5052.0, 2071.0, 1745.0, 6211.0, 1966.0, 1833.0, 1708.0, 1956.0, 5873.0, 1701.0, 1651.0, 1911.0, 1761.0, 1835.0, 1455.0], "pulseira_h": [23.8, 23.5, 23.8, 23.5, 23.5, 23.5, 24.0, 23.2, 24.0, 23.8, 23.5, 23.8, 23.8, 23.8, 23.8, 23.8, 23.5, 23.5, 23.5, 23.5, 23.8, 23.5, 24.0, 23.8, 23.8, 23.5, 23.8, 23.5], "levantes_noite": [2.0, 0.0, 1.0, 4.0, 2.0, 2.0, 0.0, 2.0, 1.0, 5.0, 4.0, 4.0, 3.0, 1.0, 6.0, 0.0, 3.0, 5.0, 3.0, 1.0, 4.0, 4.0, 2.0, 2.0, 9.0, 6.0, 7.0, 1.0], "wc_noite": [1.0, 0.0, 1.0, 4.0, 2.0, 2.0, 0.0, 2.0, 1.0, 5.0, 4.0, 3.0, 2.0, 1.0, 5.0, 0.0, 3.0, 5.0, 3.0, 1.0, 3.0, 4.0, 2.0, 2.0, 9.0, 6.0, 7.0, 0.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "doses_tomadas": [2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 1.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], "temp_interior": [19.9, 20.0, 20.0, 19.9, 20.1, 20.1, 20.1, 20.0, 20.0, 20.0, 20.0, 20.1, 20.0, 19.9, 20.0, 19.9, 20.0, 20.1, 20.2, 20.0, 20.0, 20.1, 19.9, 20.0, 20.0, 20.0, 20.0, 20.0], "spo2": [97.0, 97.0, 96.0, 96.0, 96.0, 96.0, null, null, 96.0, null, null, 95.0, 96.0, 96.0, 97.0, 97.0, 96.0, 96.0, 96.0, 96.0, 96.0, 96.0, 97.0, 96.0, 97.0, 95.0, null, 95.0], "fc": [74.1, 73.8, 73.0, 72.1, 72.5, 72.4, 71.1, 72.9, 73.5, 72.9, 74.0, 73.4, 72.1, 73.2, 75.0, 73.8, 75.5, 74.5, 74.3, 74.6, 74.4, 75.7, 73.8, 73.5, 74.5, 73.9, 74.4, 74.1], "sistolica": [134.0, 133.0, 130.0, 131.0, 138.0, 136.0, null, null, 135.0, 134.0, null, 135.0, 134.0, 120.0, 137.0, 116.0, 125.0, 132.0, 136.0, 132.0, 129.0, 137.0, 128.0, 127.0, 136.0, 134.0, null, 132.0], "peso": [83.0, null, 82.9, 83.0, 83.0, 83.2, 83.4, null, null, null, null, null, null, 82.6, null, 83.4, null, null, 83.0, 83.0, 82.9, null, null, 83.0, null, 83.2, 83.0, null], "frigorifico": [10.0, 5.0, 17.0, 11.0, 13.0, 12.0, 13.0, 11.0, 8.0, 8.0, 13.0, 10.0, 13.0, 7.0, 12.0, 14.0, 12.0, 16.0, 18.0, 11.0, 11.0, 7.0, 13.0, 11.0, 13.0, 18.0, 7.0, 10.0], "cozinha": [2.0, 3.0, 3.0, 3.0, 4.0, 3.0, 4.0, 2.0, 4.0, 2.0, 4.0, 2.0, 3.0, 2.0, 3.0, 4.0, 3.0, 3.0, 3.0, 4.0, 2.0, 2.0, 3.0, 4.0, 2.0, 4.0, 3.0, 4.0], "saidas": [4.0, 4.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0, 4.0, 2.0, 4.0, 2.0, 0.0, 2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 0.0, 0.0, 4.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0]}, "semanas": {"passos": [3421.7, 3274.0, 2498.6, 2312.4], "pulseira_h": [23.7, 23.7, 23.6, 23.7], "levantes_noite": [1.6, 2.9, 3.1, 4.4], "wc_noite": [1.4, 2.6, 2.9, 4.3], "doses_falhadas": [0.1, 0.3, 0.1, 0.0], "doses_tomadas": [1.9, 1.7, 1.9, 2.0], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [96.3, 95.8, 96.3, 96.0], "fc": [72.7, 73.1, 74.6, 74.3], "sistolica": [133.7, 131.6, 129.6, 132.3], "peso": [83.1, 82.6, 83.1, 83.1], "frigorifico": [11.6, 10.0, 13.4, 11.3], "cozinha": [3.1, 2.7, 3.1, 3.1], "saidas": [2.0, 2.3, 1.7, 1.7]}, "flags": [{"sev": 2, "regra": "R4", "titulo": "Levanta-se 4.4×/noite (era 1.6)", "evidencia": "Saídas da cama 23h–7h; idas ao WC à noite 1.4 → 4.3.", "metric": "levantes_noite"}], "eventos_criticos": [], "saude": {"uptime": 100.0, "gaps": [], "parcial_horas": 0, "parcial": null, "baterias": []}, "decisao": {"urgencia": "48h", "importancia": 2, "confianca": "Média", "resumo": "Levanta-se de noite quase 3× mais. Antes da infeção urinária de março aconteceu o mesmo.", "porque": "Padrão noturno igual ao que antecedeu a infeção. Também pode ser da próstata: só o médico confirma.", "acao": "Ligar ao filho e marcar médico de família (análise à urina). Mais idas noturnas = mais risco de queda.", "servicos": [{"id": "SRV-06", "nome": "Acompanhamento a consultas", "preco": 18.0, "unidade": "hora", "qty": "1 h · consulta"}], "confianca_nota": "Sinal forte (cama + WC concordam); a causa é hipótese.", "contactos": [{"id": "CON-006", "nome": "Carlos Gaspar", "relacao": "Filho", "telefone": "+351 910 000 401", "email": "carlos.gaspar@exemplo.pt", "canal_preferido": "Telefone", "canal": "Telefone", "prioridade": 1}, {"id": "CON-007", "nome": "Helena Gaspar", "relacao": "Irmã", "telefone": "+351 910 000 402", "email": null, "canal_preferido": "Telefone", "canal": "Telefone", "prioridade": 2}]}, "contactos_todos": [{"nome": "Carlos Gaspar", "relacao": "Filho", "canal": "Telefone", "prioridade": 1}, {"nome": "Helena Gaspar", "relacao": "Irmã", "canal": "Telefone", "prioridade": 2}], "score": {"severidade": 2, "vulnerabilidade": 0.75, "urgencia": 3, "importancia": 2.75, "total": 36.75}}, {"id": "BEN-003", "nome": "Rosa Almeida", "idade": 86, "sexo": "F", "local": "Benfica, Lisboa", "vive_sozinho": true, "dependencia": "Moderada", "rm": {"id": "RM-01", "nome": "Patrícia Nunes"}, "condicoes": "Osteoartrose dos joelhos; hipertensão", "mobilidade": "Marcha com bengala", "risco_queda": "Médio", "notas": "Saía diariamente ao café da esquina.", "medicacao": ["Losartan 50 mg · 08:00", "Paracetamol 1 g · 08:00; 20:00"], "contrato": {"horas": 20.0, "orcamento": 1501.2}, "ocorrencias": [{"data": "2026-11-11", "tipo": "Observação", "texto": "Cliente diz que tem andado mais cansada e com dores nos joelhos; já não vai ao café."}], "sinais": {"passos": [2214.0, 2349.0, 2198.0, 2135.0, 2184.0, 2063.0, 2097.0, 1930.0, 1789.0, 1888.0, 1892.0, 1728.0, 5806.0, 1665.0, 1581.0, 1620.0, 1494.0, 1457.0, 1467.0, 1419.0, 1264.0, 1295.0, 1199.0, 1172.0, 1143.0, 1131.0, 1009.0, 1000.0], "pulseira_h": [23.5, 23.2, 23.8, 23.5, 23.2, 23.5, 23.8, 23.8, 21.2, 23.5, 23.8, 23.8, 23.8, 23.8, 23.5, 24.0, 23.5, 23.5, 23.5, 23.8, 23.8, 23.5, 23.5, 23.8, 23.5, 23.8, 23.8, 23.8], "levantes_noite": [0.0, 2.0, 2.0, 0.0, 3.0, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 2.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 3.0], "wc_noite": [0.0, 2.0, 2.0, 0.0, 3.0, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 2.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], "doses_tomadas": [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 1.0, 2.0, 2.0, 2.0, 1.0, 2.0], "temp_interior": [20.0, 20.0, 19.9, 20.0, 20.0, 19.9, 20.1, 19.9, 20.0, 20.1, 20.0, 20.0, 19.9, 20.0, 20.0, 20.0, 20.0, 20.0, 20.1, 20.0, 20.0, 20.1, 19.9, 20.1, 20.1, 20.1, 20.0, 19.9], "spo2": [96.0, 98.0, 96.0, 96.0, null, null, 96.0, 98.0, 96.0, 96.0, 96.0, null, 96.0, 97.0, 97.0, 97.0, null, 96.0, 96.0, 97.0, 97.0, 95.0, null, 96.0, 96.0, null, 95.0, 96.0], "fc": [69.0, 69.7, 69.1, 69.1, 69.8, 68.5, 69.5, 69.3, 68.9, 69.0, 69.3, 68.9, 68.9, 68.5, 68.0, 69.3, 68.9, 68.5, 68.6, 69.0, 68.1, 68.7, 67.8, 68.3, 67.9, 67.9, 67.3, 67.7], "sistolica": [136.0, 136.0, 135.0, 142.0, null, null, 130.0, 138.0, 142.0, 137.0, 144.0, null, 137.0, 137.0, 136.0, 133.0, null, 138.0, 139.0, 136.0, 133.0, 137.0, null, 135.0, 140.0, null, 139.0, 133.0], "peso": [71.2, 71.3, 70.7, 71.4, 70.8, 71.3, null, 71.2, null, 71.0, 71.0, null, 70.7, 71.1, 71.1, 71.0, 70.9, null, null, 71.0, 71.1, 70.9, 70.8, 71.0, 71.3, null, 70.7, null], "frigorifico": [6.0, 15.0, 8.0, 13.0, 13.0, 14.0, 8.0, 17.0, 12.0, 6.0, 14.0, 5.0, 10.0, 4.0, 13.0, 12.0, 15.0, 9.0, 11.0, 8.0, 8.0, 8.0, 9.0, 6.0, 12.0, 10.0, 11.0, 7.0], "cozinha": [4.0, 4.0, 4.0, 3.0, 4.0, 2.0, 3.0, 3.0, 2.0, 2.0, 4.0, 3.0, 3.0, 2.0, 2.0, 4.0, 1.0, 1.0, 4.0, 1.0, 3.0, 2.0, 4.0, 4.0, 4.0, 2.0, 4.0, 2.0], "saidas": [2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 0.0]}, "semanas": {"passos": [2177.1, 2385.4, 1471.7, 1135.6], "pulseira_h": [23.5, 23.4, 23.7, 23.7], "levantes_noite": [1.3, 0.7, 0.9, 1.1], "wc_noite": [1.3, 0.7, 0.9, 1.0], "doses_falhadas": [0.0, 0.0, 0.3, 0.3], "doses_tomadas": [2.0, 2.0, 1.7, 1.7], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [96.4, 96.5, 96.7, 95.6], "fc": [69.2, 69.0, 68.6, 67.9], "sistolica": [135.8, 139.2, 135.8, 136.8], "peso": [71.1, 71.0, 71.0, 70.9], "frigorifico": [11.0, 9.7, 10.9, 9.0], "cozinha": [3.4, 2.7, 2.3, 3.1], "saidas": [1.4, 1.7, 1.4, 1.4]}, "flags": [{"sev": 1, "regra": "R7", "titulo": "Passos -48% vs semana 1", "evidencia": "2177 → 1136 passos/dia com a pulseira usada 24 h/dia.", "metric": "passos"}], "eventos_criticos": [], "saude": {"uptime": 99.7, "gaps": [{"inicio": "2026-11-03 14:00", "fim": "2026-11-03 17:00", "horas": 3.0}], "parcial_horas": 0, "parcial": null, "baterias": []}, "decisao": {"urgencia": "semana", "importancia": 2, "confianca": "Média", "resumo": "Está a ficar em casa: menos passos, acorda mais tarde e falha o paracetamol. A cuidadora já o notou.", "porque": "A queda de atividade confirma a observação de 11-nov (dores nos joelhos, deixou de ir ao café).", "acao": "Mensagem à filha; propor estimulação física e consulta para controlo da dor.", "servicos": [{"id": "SRV-05", "nome": "Apoio à mobilidade e estimulação física", "preco": 18.0, "unidade": "hora", "qty": "2 h/sem"}, {"id": "SRV-06", "nome": "Acompanhamento a consultas", "preco": 18.0, "unidade": "hora", "qty": "1 h · consulta"}], "confianca_nota": "Tendência gradual; sem sinais agudos. Temperatura de 85 °C a 07-nov era erro do sensor.", "contactos": [{"id": "CON-005", "nome": "Ana Almeida Silva", "relacao": "Filha", "telefone": "+351 910 000 301", "email": "ana.silva@exemplo.pt", "canal_preferido": "WhatsApp", "canal": "WhatsApp", "prioridade": 1}]}, "contactos_todos": [{"nome": "Ana Almeida Silva", "relacao": "Filha", "canal": "WhatsApp", "prioridade": 1}], "score": {"severidade": 1, "vulnerabilidade": 0.75, "urgencia": 2, "importancia": 2.75, "total": 23.75}}, {"id": "BEN-001", "nome": "Maria Fernanda Lopes", "idade": 78, "sexo": "F", "local": "Parede, Cascais", "vive_sozinho": true, "dependencia": "Ligeira", "rm": {"id": "RM-02", "nome": "Ricardo Pires"}, "condicoes": "Hipertensão controlada", "mobilidade": "Autónoma", "risco_queda": "Baixo", "notas": "Caminha diariamente no paredão; gosta de cozinhar.", "medicacao": ["Lisinopril 10 mg · 08:00"], "contrato": {"horas": 6.0, "orcamento": 418.7}, "ocorrencias": [], "sinais": {"passos": [6146.0, 5846.0, 5873.0, 7595.0, 7583.0, 7574.0, 6900.0, 7586.0, 5927.0, 6028.0, 6164.0, 7081.0, 2594.0, 7636.0, 6261.0, 6964.0, 6988.0, 2384.0, 7011.0, 2634.0, 6644.0, 6154.0, 6914.0, 7056.0, 7102.0, 2380.0, 6396.0, 6271.0], "pulseira_h": [23.5, 23.8, 23.8, 23.8, 23.5, 23.5, 23.8, 23.8, 23.8, 23.8, 23.0, 23.5, 23.5, 23.8, 23.5, 23.8, 23.5, 23.8, 23.5, 23.8, 23.2, 23.8, 23.5, 23.8, 23.5, 23.2, 23.5, 23.8], "levantes_noite": [2.0, 0.0, 0.0, 1.0, 0.0, 2.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0], "wc_noite": [3.0, 0.0, 0.0, 2.0, 0.0, 2.0, 1.0, 1.0, 2.0, 0.0, 0.0, 3.0, 1.0, 0.0, 2.0, 1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 0.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0], "doses_tomadas": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0], "temp_interior": [20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 19.9, 20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 20.1, 19.9, 19.9, 20.0, 20.0, 19.9, 19.9, 20.0, 20.0, 20.1, 19.9], "spo2": [96.0, 96.0, null, 97.0, 96.0, 96.0, null, 97.0, 95.0, null, 97.0, null, 95.0, 97.0, 96.0, 97.0, 95.0, null, 96.0, null, 95.0, 96.0, 97.0, 96.0, 97.0, 97.0, 96.0, null], "fc": [69.0, 68.8, 68.8, 68.9, 68.6, 68.5, 69.0, 69.2, 68.7, 68.7, 68.1, 68.9, 67.9, 68.7, 69.1, 69.0, 68.8, 67.9, 69.3, 67.7, 68.6, 68.0, 68.9, 68.3, 68.5, 67.7, 69.0, 68.0], "sistolica": [119.0, 125.0, null, 130.0, 137.0, 126.0, null, 127.0, 123.0, null, 137.0, null, 127.0, 126.0, 124.0, 125.0, 127.0, null, 130.0, null, 125.0, 136.0, 127.0, 121.0, 122.0, 125.0, 119.0, null], "peso": [61.8, null, null, 61.8, 62.1, 62.4, 62.1, 62.2, null, 62.2, null, 62.2, 62.4, null, 61.9, null, 62.6, 62.2, 62.0, null, null, 62.1, 61.8, null, 61.8, 61.9, 61.3, 62.4], "frigorifico": [13.0, 8.0, 14.0, 10.0, 10.0, 15.0, 8.0, 9.0, 10.0, 18.0, 20.0, 8.0, 10.0, 13.0, 12.0, 10.0, 7.0, 13.0, 15.0, 9.0, 14.0, 19.0, 9.0, 12.0, 11.0, 11.0, 10.0, 12.0], "cozinha": [3.0, 3.0, 3.0, 3.0, 4.0, 2.0, 3.0, 4.0, 2.0, 2.0, 4.0, 3.0, 2.0, 4.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 1.0, 2.0], "saidas": [2.0, 4.0, 2.0, 4.0, 2.0, 2.0, 2.0, 2.0, 4.0, 2.0, 4.0, 2.0, 0.0, 2.0, 2.0, 4.0, 2.0, 2.0, 2.0, 0.0, 2.0, 2.0, 4.0, 2.0, 4.0, 0.0, 2.0, 2.0]}, "semanas": {"passos": [6788.1, 6145.1, 5555.1, 6039.0], "pulseira_h": [23.7, 23.6, 23.6, 23.6], "levantes_noite": [0.7, 0.9, 0.6, 0.3], "wc_noite": [1.1, 1.0, 0.9, 0.4], "doses_falhadas": [0.0, 0.0, 0.0, 0.1], "doses_tomadas": [1.0, 1.0, 1.0, 0.9], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [96.2, 96.2, 95.8, 96.5], "fc": [68.8, 68.6, 68.6, 68.3], "sistolica": [127.4, 128.0, 126.2, 125.0], "peso": [62.0, 62.3, 62.2, 61.9], "frigorifico": [11.1, 12.6, 11.4, 12.0], "cozinha": [3.0, 3.0, 2.7, 2.6], "saidas": [2.6, 2.3, 2.0, 2.3]}, "flags": [{"sev": 0, "regra": "R10x", "titulo": "Queda 02-Nov 11:21 · confiança 0.66", "evidencia": "Abaixo de 0,8 e 714 passos nos 15 min seguintes: falso positivo.", "metric": null}], "eventos_criticos": [{"ts": "2026-11-02 11:21", "tipo": "queda_detetada", "valor": 0.66, "passos_15min": 714, "fc_depois": [89.0]}], "saude": {"uptime": 99.7, "gaps": [{"inicio": "2026-11-05 17:00", "fim": "2026-11-05 19:00", "horas": 2.0}, {"inicio": "2026-11-20 13:00", "fim": "2026-11-20 15:00", "horas": 2.0}], "parcial_horas": 119, "parcial": "05-Nov → 10-Nov", "baterias": [{"dispositivo": "mov (cozinha)", "min": 2, "periodo": "31-Oct → 05-Nov"}]}, "decisao": {"urgencia": "nenhuma", "importancia": 1, "confianca": "Alta", "resumo": "Estável em todos os sinais. As anomalias desta casa são dos sensores.", "porque": "Leituras de −40 °C e 12,4 kg são erros; o sensor de movimento da cozinha ficou sem bateria (05→10-nov).", "acao": "Operacional: confirmar a troca da bateria do sensor da cozinha. Nenhum contacto com a família.", "servicos": [], "confianca_nota": "1 dose falhada (21-nov), isolada.", "contactos": []}, "contactos_todos": [{"nome": "Teresa Lopes", "relacao": "Filha", "canal": "WhatsApp", "prioridade": 1}, {"nome": "Rui Lopes", "relacao": "Filho", "canal": "Telefone", "prioridade": 2}], "score": {"severidade": 0, "vulnerabilidade": 0.5, "urgencia": 0, "importancia": 1.5, "total": 0.5}}, {"id": "BEN-002", "nome": "António Rebelo", "idade": 82, "sexo": "M", "local": "Carnaxide, Oeiras", "vive_sozinho": false, "dependencia": "Ligeira", "rm": {"id": "RM-02", "nome": "Ricardo Pires"}, "condicoes": "Hipertensão; hipoacusia", "mobilidade": "Autónomo", "risco_queda": "Baixo", "notas": "Esquece-se frequentemente de usar a pulseira; tira-a para dormir a sesta.", "medicacao": ["Amlodipina 5 mg · 08:00"], "contrato": {"horas": 14.0, "orcamento": 1016.24}, "ocorrencias": [{"data": "2026-10-12", "tipo": "Instalação", "texto": "Kit IoT instalado. O cliente diz que a pulseira o incomoda."}], "sinais": {"passos": [2381.0, 2386.0, 1905.0, 7680.0, 2354.0, 2274.0, 6106.0, 2398.0, 7143.0, 2056.0, 2216.0, 1971.0, 7622.0, 5960.0, 2044.0, 2655.0, 2092.0, 6546.0, 1974.0, 7550.0, 1893.0, 2189.0, 1804.0, 2313.0, 5523.0, 0.0, 789.0, 2064.0], "pulseira_h": [23.8, 23.8, 21.2, 21.0, 22.5, 21.5, 21.0, 23.5, 23.5, 21.2, 23.5, 20.5, 22.2, 21.5, 22.0, 23.5, 21.5, 20.8, 21.8, 23.5, 20.0, 21.5, 21.0, 23.8, 15.8, 0.0, 7.8, 21.8], "levantes_noite": [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 3.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 2.0, 1.0, 1.0], "wc_noite": [1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 3.0, 1.0, 2.0, 1.0, 1.0, 3.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 2.0, 1.0], "doses_falhadas": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "doses_tomadas": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], "temp_interior": [20.0, 20.0, 20.0, 20.0, 19.9, 20.1, 20.2, 20.1, 20.0, 20.1, 20.0, 20.0, 20.0, 20.1, 20.0, 20.0, 20.0, 20.1, 20.0, 20.0, 20.0, 19.9, 20.1, 20.0, 20.0, 20.0, 20.0, 20.0], "spo2": [null, 96.0, 96.0, 96.0, 96.0, 98.0, 97.0, 97.0, 96.0, 99.0, 97.0, 96.0, 97.0, 97.0, 94.0, 96.0, null, 95.0, 96.0, 96.0, 97.0, null, 95.0, 96.0, 95.0, 95.0, 95.0, null], "fc": [72.1, 71.0, 70.7, 72.5, 72.9, 72.1, 72.3, 71.5, 73.1, 71.4, 71.8, 71.3, 73.1, 71.7, 71.0, 72.1, 70.5, 72.3, 71.1, 72.5, 70.7, 71.8, 70.5, 71.7, 72.0, null, 73.6, 71.5], "sistolica": [null, 146.0, 132.0, 138.0, 137.0, 138.0, 130.0, 132.0, 140.0, 140.0, 136.0, 131.0, 135.0, 135.0, 141.0, 145.0, null, 140.0, 145.0, 144.0, 133.0, null, 137.0, 134.0, 140.0, 137.0, 144.0, null], "peso": [79.3, 79.5, 79.5, null, null, 79.7, 80.0, null, 79.7, 79.6, 79.5, null, 79.6, null, 79.6, 79.2, 79.8, 79.8, 78.9, 79.3, 79.5, 79.5, 79.6, 79.5, 79.1, 79.3, null, null], "frigorifico": [11.0, 16.0, 8.0, 12.0, 11.0, 13.0, 14.0, 11.0, 17.0, 9.0, 13.0, 17.0, 3.0, 7.0, 6.0, 16.0, 11.0, 9.0, 10.0, 9.0, 9.0, 15.0, 12.0, 13.0, 9.0, 7.0, 8.0, 11.0], "cozinha": [2.0, 4.0, 3.0, 4.0, 3.0, 4.0, 3.0, 3.0, 3.0, 2.0, 3.0, 2.0, 3.0, 3.0, 3.0, 4.0, 4.0, 3.0, 3.0, 3.0, 3.0, 2.0, 3.0, 2.0, 3.0, 2.0, 3.0, 2.0], "saidas": [2.0, 0.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 0.0, 2.0, 4.0, 2.0, 2.0, 0.0, 2.0, 2.0, 2.0, 4.0, 0.0, 2.0, 0.0, 2.0, 2.0, 2.0, 3.0, 0.0]}, "semanas": {"passos": [3583.7, 4195.1, 3536.3, 2097.4], "pulseira_h": [22.1, 22.3, 21.9, 16.0], "levantes_noite": [0.6, 0.4, 0.6, 1.0], "wc_noite": [1.4, 1.4, 1.4, 1.9], "doses_falhadas": [0.0, 0.1, 0.0, 0.0], "doses_tomadas": [1.0, 0.9, 1.0, 1.0], "temp_interior": [20.0, 20.0, 20.0, 20.0], "spo2": [96.5, 97.0, 95.7, 95.2], "fc": [71.9, 72.0, 71.5, 71.9], "sistolica": [136.8, 135.6, 141.3, 138.4], "peso": [79.6, 79.6, 79.4, 79.4], "frigorifico": [12.1, 11.0, 10.0, 10.7], "cozinha": [3.3, 2.7, 3.3, 2.4], "saidas": [1.7, 2.0, 1.7, 1.6]}, "flags": [{"sev": 0, "regra": "R7x", "titulo": "Passos -41%, mas a pulseira foi menos usada", "evidencia": "Uso da pulseira 22 → 16 h/dia: a quebra é do sensor, não da pessoa.", "metric": "passos"}, {"sev": 0, "regra": "R10x", "titulo": "Queda 30-Oct 15:12 · confiança 0.58", "evidencia": "Abaixo de 0,8 e 0 passos nos 15 min seguintes: falso positivo.", "metric": null}, {"sev": 0, "regra": "R11", "titulo": "SOS 06-Nov 10:12 revisto", "evidencia": "FC 71 e 27 passos logo a seguir: provável toque acidental. Confirmar.", "metric": null}, {"sev": 0, "regra": "R10x", "titulo": "Queda 11-Nov 14:40 · confiança 0.61", "evidencia": "Abaixo de 0,8 e 0 passos nos 15 min seguintes: falso positivo.", "metric": null}, {"sev": 0, "regra": "R10x", "titulo": "Queda 15-Nov 16:05 · confiança 0.60", "evidencia": "Abaixo de 0,8 e 0 passos nos 15 min seguintes: falso positivo.", "metric": null}], "eventos_criticos": [{"ts": "2026-10-30 15:12", "tipo": "queda_detetada", "valor": 0.58, "passos_15min": 0, "fc_depois": []}, {"ts": "2026-11-06 10:12", "tipo": "sos", "valor": 1.0, "passos_15min": 27, "fc_depois": [71.0]}, {"ts": "2026-11-11 14:40", "tipo": "queda_detetada", "valor": 0.61, "passos_15min": 0, "fc_depois": []}, {"ts": "2026-11-15 16:05", "tipo": "queda_detetada", "valor": 0.6, "passos_15min": 0, "fc_depois": []}], "saude": {"uptime": 99.9, "gaps": [{"inicio": "2026-11-21 19:00", "fim": "2026-11-21 21:00", "horas": 2.0}], "parcial_horas": 48, "parcial": "19-Nov → 21-Nov", "baterias": [{"dispositivo": "pulseira (pulso)", "min": 8, "periodo": "19-Nov → 19-Nov"}]}, "decisao": {"urgencia": "nenhuma", "importancia": 1, "confianca": "Alta", "resumo": "Nada a escalar. Os alertas desta casa são da pulseira, não do António.", "porque": "3 \"quedas\" com confiança 0,58–0,61 seguidas de atividade normal; o SOS de 06-nov teve FC 71 e passos logo a seguir; a pulseira esteve menos usada (bateria a 8 %). Não vive sozinho.", "acao": "Operacional: trocar a bateria da pulseira. Confirmar o SOS de 06-nov na próxima chamada de rotina.", "servicos": [], "confianca_nota": "Um SOS nunca se descarta automaticamente: este foi revisto e é compatível com toque acidental.", "contactos": []}, "contactos_todos": [{"nome": "Lurdes Rebelo", "relacao": "Cônjuge", "canal": "Telefone", "prioridade": 1}, {"nome": "Pedro Rebelo", "relacao": "Filho", "canal": "Email", "prioridade": 2}], "score": {"severidade": 0, "vulnerabilidade": 0.0, "urgencia": 0, "importancia": 1.0, "total": 0.0}}], "queda_005": [{"t": "15:42", "tipo": "queda_detetada", "loc": "pulso", "v": 0.94}, {"t": "15:44", "tipo": "movimento", "loc": "sala", "v": 0}, {"t": "15:44", "tipo": "passos", "loc": "pulso", "v": 6}, {"t": "15:44", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 99}, {"t": "16:00", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 108}, {"t": "16:15", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 112}, {"t": "16:17", "tipo": "movimento", "loc": "sala", "v": 1}, {"t": "16:18", "tipo": "movimento", "loc": "sala", "v": 0}, {"t": "16:29", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 104}, {"t": "16:44", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 96}, {"t": "16:59", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 97}, {"t": "17:11", "tipo": "movimento", "loc": "sala", "v": 1}, {"t": "17:12", "tipo": "movimento", "loc": "sala", "v": 0}, {"t": "17:14", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 98}, {"t": "17:29", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 98}, {"t": "17:37", "tipo": "movimento", "loc": "sala", "v": 1}, {"t": "17:39", "tipo": "movimento", "loc": "sala", "v": 0}, {"t": "17:45", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 97}, {"t": "18:00", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 87}, {"t": "18:00", "tipo": "porta", "loc": "porta_entrada", "v": 1}, {"t": "18:01", "tipo": "movimento", "loc": "entrada", "v": 1}, {"t": "18:01", "tipo": "porta", "loc": "porta_entrada", "v": 0}, {"t": "18:02", "tipo": "movimento", "loc": "wc", "v": 1}, {"t": "18:03", "tipo": "movimento", "loc": "sala", "v": 1}, {"t": "18:03", "tipo": "movimento", "loc": "entrada", "v": 0}, {"t": "18:07", "tipo": "movimento", "loc": "sala", "v": 0}, {"t": "18:14", "tipo": "movimento", "loc": "sala", "v": 1}, {"t": "18:14", "tipo": "passos", "loc": "pulso", "v": 6}, {"t": "18:14", "tipo": "frequencia_cardiaca", "loc": "pulso", "v": 76}, {"t": "18:15", "tipo": "movimento", "loc": "wc", "v": 0}], "rms": [{"id": "RM-01", "nome": "Patrícia Nunes"}, {"id": "RM-02", "nome": "Ricardo Pires"}, {"id": "RM-03", "nome": "Sónia Lourenço"}], "catalogo": [{"id": "SRV-01", "nome": "Companhia e supervisão", "preco": 15.0, "unidade": "hora"}, {"id": "SRV-02", "nome": "Apoio à higiene pessoal", "preco": 17.0, "unidade": "hora"}, {"id": "SRV-03", "nome": "Preparação de refeições", "preco": 16.0, "unidade": "hora"}, {"id": "SRV-04", "nome": "Acompanhamento da toma de medicação", "preco": 12.0, "unidade": "visita (30 min)"}, {"id": "SRV-05", "nome": "Apoio à mobilidade e estimulação física", "preco": 18.0, "unidade": "hora"}, {"id": "SRV-06", "nome": "Acompanhamento a consultas", "preco": 18.0, "unidade": "hora"}, {"id": "SRV-07", "nome": "Serviço noturno (pernoita 22h-08h)", "preco": 110.0, "unidade": "noite"}, {"id": "SRV-08", "nome": "Apoio contínuo 24h", "preco": 230.0, "unidade": "dia"}, {"id": "SRV-09", "nome": "Apoio a pessoas com demência", "preco": 19.0, "unidade": "hora"}, {"id": "SRV-10", "nome": "Monitorização remota (kit IoT)", "preco": 29.0, "unidade": "mês"}]};
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const URG = {
+  hoje:    {label:"Hoje",           lane:"Contactar hoje",       c:"var(--u-hoje)", cb:"var(--u-hoje-bg)"},
+  "48h":   {label:"Em 48 h",        lane:"Próximas 48 horas",    c:"var(--u-48)",   cb:"var(--u-48-bg)"},
+  semana:  {label:"Esta semana",    lane:"Durante a semana",     c:"var(--u-sem)",  cb:"var(--u-sem-bg)"},
+  nenhuma: {label:"Pode ignorar",   lane:"Pode ignorar",         c:"var(--u-ok)",   cb:"var(--u-ok-bg)"},
+};
+const SEVC = ["var(--ink-3)","var(--u-sem)","var(--u-48)","var(--u-hoje)"];
+const MET = {
+  peso:{l:"Peso",u:"kg"}, spo2:{l:"Saturação O₂",u:"%"}, fc:{l:"Freq. cardíaca",u:"bpm"}, sistolica:{l:"Tensão sistólica",u:"mmHg"},
+  levantes_noite:{l:"Sai da cama à noite",u:"×"}, wc_noite:{l:"WC à noite",u:"×"}, doses_falhadas:{l:"Doses falhadas",u:"/dia"},
+  temp_interior:{l:"Temperatura em casa",u:"°C"}, passos:{l:"Passos",u:"/dia"}, frigorifico:{l:"Frigorífico",u:"aberturas"},
+  cozinha:{l:"Chaleira + micro-ondas",u:"usos"}, saidas:{l:"Porta de entrada",u:"aberturas"}, pulseira_h:{l:"Pulseira usada",u:"h/dia"},
+};
+const ACT = {contactado:"Contacto registado", servico:"Serviço proposto", servico_off:"Serviço retirado", adiado:"Adiado 48 h", ignorado:"Não escalado", resolvido:"Marcado como resolvido"};
+
+/* ---------- registo de ações (event log: desfazer = novo evento que anula) */
+const KEY = "sofia-triagem-log-v1";
+let log = [];
+try { log = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch(e) { log = []; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(log)); } catch(e) {} };
+const undoneIds = () => new Set(log.filter(e => e.tipo === "desfazer").map(e => e.ref));
+function act(ben, tipo, detalhe="") {
+  const e = {id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()), ts: new Date().toISOString(), ben, tipo, detalhe};
+  log.push(e); save(); render(); toast(`${ACT[tipo]} · ${nameOf(ben)}${detalhe ? " · "+detalhe : ""}`, e.id);
+}
+function undo(id) {
+  if (!id || undoneIds().has(id)) return;
+  const tgt = log.find(e => e.id === id);
+  log.push({id:String(Date.now()), ts:new Date().toISOString(), ben:tgt.ben, tipo:"desfazer", ref:id}); save(); render();
+  toast(`Desfeito: ${ACT[tgt.tipo]} · ${nameOf(tgt.ben)}`);
+}
+function lastActive() { const u = undoneIds(); return [...log].reverse().find(e => e.tipo !== "desfazer" && !u.has(e.id)); }
+function stateOf(ben) {
+  const u = undoneIds(); const evs = log.filter(e => e.ben === ben && e.tipo !== "desfazer" && !u.has(e.id));
+  const st = {status:null, services:new Set(), last:null};
+  for (const e of evs) {
+    if (e.tipo === "servico") st.services.add(e.detalhe);
+    else if (e.tipo === "servico_off") st.services.delete(e.detalhe);
+    else { st.status = e; }
+    st.last = e;
+  }
+  return st;
+}
+const nameOf = id => DATA.beneficiarios.find(b => b.id === id)?.nome.split(" ")[0] + " " + DATA.beneficiarios.find(b => b.id === id)?.nome.split(" ").slice(-1);
+const hhmm = iso => new Date(iso).toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
+
+let toastTimer;
+function toast(msg, undoId) {
+  const r = $("#toast-root"); clearTimeout(toastTimer);
+  r.innerHTML = `<div class="toast" role="status"><span>${esc(msg)}</span>${undoId ? `<button id="toast-undo">Desfazer</button><kbd>Ctrl+Z</kbd>` : ""}</div>`;
+  if (undoId) $("#toast-undo").onclick = () => undo(undoId);
+  toastTimer = setTimeout(() => r.innerHTML = "", 6000);
+}
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) { const l = lastActive(); if (l) { e.preventDefault(); undo(l.id); } }
+  if (e.key === "Escape") closeDrawer();
+});
+
+/* ---------- sparkline: linha diária, linha tracejada = média da semana 1, lacunas = sem dados */
+function spark(arr, {w=120, h=30, color="var(--ink)", big=false}={}) {
+  const vals = arr.filter(v => v != null); if (!vals.length) return `<svg class="spark" width="${w}" height="${h}"></svg>`;
+  let lo = Math.min(...vals), hi = Math.max(...vals); if (hi === lo) { hi += 1; lo -= 1; }
+  const pad = big ? 4 : 3, X = i => pad + i * (w - 2*pad) / (arr.length - 1), Y = v => h - pad - (v - lo) / (hi - lo) * (h - 2*pad);
+  let d = "", area = "", seg = [];
+  const flush = () => { if (seg.length) { area += `M${X(seg[0][0])},${h-pad}` + seg.map(([i,v]) => `L${X(i)},${Y(v)}`).join("") + `L${X(seg.at(-1)[0])},${h-pad}Z`; } seg = []; };
+  arr.forEach((v,i) => { if (v == null) { flush(); return; } d += (seg.length ? "L" : "M") + X(i) + "," + Y(v); seg.push([i,v]); });
+  flush();
+  const b1 = arr.slice(0,7).filter(v => v != null); const base = b1.length ? b1.reduce((a,b)=>a+b,0)/b1.length : null;
+  let li = arr.length - 1; while (li > 0 && arr[li] == null) li--;
+  const gaps = []; let gs = null;
+  arr.forEach((v,i) => { if (v == null && gs == null) gs = i; if (v != null && gs != null) { gaps.push([gs,i-1]); gs = null; } }); if (gs != null) gaps.push([gs, arr.length-1]);
+  const wk = big ? [7,14,21].map(i => `<line x1="${X(i-.5)}" x2="${X(i-.5)}" y1="0" y2="${h}" stroke="var(--line)" />`).join("") : "";
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="tendência de 4 semanas">
+    ${wk}
+    ${gaps.map(([a,b]) => `<rect x="${X(a)-2}" y="0" width="${X(b)-X(a)+4}" height="${h}" fill="url(#hatch)" />`).join("")}
+    <path d="${area}" fill="${color}" fill-opacity=".09"/>
+    ${base != null ? `<line x1="${pad}" x2="${w-pad}" y1="${Y(base)}" y2="${Y(base)}" stroke="var(--ink-3)" stroke-dasharray="2 3" stroke-width="1"/>` : ""}
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(li)}" cy="${Y(arr[li])}" r="2.6" fill="${color}"/>
+  </svg>`;
+}
+
+/* ---------- triagem */
+let RM = "todas";
+function bens() { return DATA.beneficiarios.filter(b => RM === "todas" || b.rm.id === RM); }
+
+function card(b) {
+  const u = URG[b.decisao.urgencia], st = stateOf(b.id), d = b.decisao;
+  const flags = b.flags.filter(f => f.sev > 0).slice(0, 4);
+  const soft = b.flags.filter(f => f.sev === 0);
+  const flagHtml = (f) => `<div class="flag ${f.sev===0?"sev0":""}">
+      <span class="t"><i class="sev" style="background:${SEVC[f.sev]}"></i>${esc(f.titulo)}</span>
+      ${f.metric && b.sinais[f.metric] ? spark(b.sinais[f.metric], {color:SEVC[f.sev]}) : "<span></span>"}
+      <span class="e">${esc(f.evidencia)}</span></div>`;
+  const statusHtml = st.status ? `<span class="pill ${st.status.tipo==="adiado"?"adiado":st.status.tipo==="ignorado"?"ign":""}">${ACT[st.status.tipo]}${st.status.detalhe?": "+esc(st.status.detalhe):""} · ${hhmm(st.status.ts)}</span><button class="undo" data-undo="${st.status.id}">Desfazer</button>` : `<span>Por tratar</span>`;
+  const people = d.contactos.map(c => `<div class="person"><b>${esc(c.nome)}</b> · ${esc(c.relacao)}
+      <span class="ch ${c.canal!==c.canal_preferido?"ov":""}" title="${c.canal!==c.canal_preferido?"Canal preferido: "+esc(c.canal_preferido)+". A urgência obriga a ligar.":"Canal preferido"}">${esc(c.canal)}</span>
+      <div><span class="phone">${esc(c.telefone)}</span><button class="copy" data-copy="${esc(c.telefone)}">copiar</button></div></div>`).join("");
+  const isIgnore = d.urgencia === "nenhuma";
+  return `<article class="card ${st.status && ["contactado","resolvido","ignorado"].includes(st.status.tipo) ? "done":""}" style="--c:${u.c};--cb:${u.cb}" id="card-${b.id}">
+    <div class="c-head">
+      <div>
+        <h3 class="c-name">${esc(b.nome)}</h3>
+        <div class="c-meta">${b.idade} anos · ${esc(b.local)} · ${esc(b.condicoes)}</div>
+        <div class="tags">${b.vive_sozinho?'<span class="tag warn">Vive sozinho</span>':'<span class="tag">Vive acompanhado</span>'}
+          ${b.risco_queda==="Alto"?'<span class="tag warn">Risco de queda alto</span>':""}<span class="tag">Dependência ${esc(b.dependencia.toLowerCase())}</span><span class="tag">${esc(b.rm.nome)}</span></div>
+      </div>
+      <div class="c-right"><span class="urg">${u.label}</span><span class="conf">Confiança <b>${esc(d.confianca)}</b></span></div>
+    </div>
+    <p class="resumo">${esc(d.resumo)}</p>
+    ${flags.length ? `<div class="flags">${flags.map(flagHtml).join("")}</div>` : ""}
+    ${isIgnore ? `<div class="flags">${soft.map(flagHtml).join("")}</div><p class="ignore-note"><b>Porquê ignorar:</b> ${esc(d.porque)} <b>Operacional:</b> ${esc(d.acao)}</p>` : `
+    <div class="plan">
+      <div class="who-row"><h4>Quem avisar</h4>${people}</div>
+      <div><h4>O que fazer</h4><p>${esc(d.acao)}</p></div>
+      ${d.servicos.length ? `<div><h4>Serviço do catálogo</h4><div class="srvs">${d.servicos.map(s => `<button class="srv" aria-pressed="${st.services.has(s.id)}" data-srv="${s.id}" data-ben="${b.id}">${s.id} ${esc(s.nome)} <span class="p">${s.preco} € / ${esc(s.unidade)}${s.qty?" · "+esc(s.qty):""}</span></button>`).join("")}</div></div>` : ""}
+    </div>`}
+    <div class="actions">
+      ${isIgnore ? `<button class="btn" data-act="resolvido" data-ben="${b.id}">Marcar como visto</button>` :
+        `<button class="btn primary" data-act="contactado" data-ben="${b.id}">Registar contacto</button>
+         <button class="btn" data-act="adiado" data-ben="${b.id}">Adiar 48 h</button>
+         <button class="btn ghost" data-ignore="${b.id}">Não escalar…</button>`}
+      <button class="link" data-open="${b.id}">Ver evidência</button>
+      <span class="status">${statusHtml}</span>
+    </div>
+    <div class="reasons" id="reasons-${b.id}" hidden>Motivo:
+      ${["Falso positivo","Já tratado por outra via","Sem relevância clínica"].map(r => `<button class="btn" data-act="ignorado" data-ben="${b.id}" data-detail="${r}">${r}</button>`).join("")}
+      <button class="btn ghost" data-ignore="${b.id}">Cancelar</button></div>
+  </article>`;
+}
+
+function matrix(list) {
+  const W = 310, H = 220, P = 30;
+  const X = u => P + (u / 4) * (W - P - 10), Y = i => H - P - ((i - 1) / 3) * (H - P - 10);
+  const seen = {};
+  const dots = list.map(b => {
+    const k = b.score.urgencia + ":" + Math.round(b.score.importancia*2); const off = (seen[k] = (seen[k]||0) + 1) - 1;
+    const x = X(b.score.urgencia) + off*16 - (off?6:0), y = Y(Math.min(b.score.importancia, 4)) - off*4;
+    const u = URG[b.decisao.urgencia]; const ini = b.nome.split(" ").map(s => s[0]).filter((_,i,a) => i===0||i===a.length-1).join("");
+    return `<g class="dot" data-open="${b.id}" style="cursor:pointer"><title>${esc(b.nome)}</title><circle cx="${x}" cy="${y}" r="12" fill="${u.c}"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">${ini}</text></g>`;
+  }).join("");
+  return `<svg class="matrix" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Matriz importância por urgência">
+    <rect x="${X(2.6)}" y="10" width="${W-10-X(2.6)}" height="${Y(2.6)-10}" fill="var(--u-hoje-bg)" rx="6"/>
+    <text x="${W-14}" y="24" text-anchor="end" font-size="10" fill="var(--u-hoje)" font-weight="600">AGIR JÁ</text>
+    <text x="${P+4}" y="${H-P-6}" font-size="10" fill="var(--u-ok)" font-weight="600">IGNORAR</text>
+    <line x1="${P}" y1="${H-P}" x2="${W-10}" y2="${H-P}" stroke="var(--line-2)"/><line x1="${P}" y1="10" x2="${P}" y2="${H-P}" stroke="var(--line-2)"/>
+    ${[["nenhuma",0],["semana",2],["48 h",3],["hoje",4]].map(([l,v]) => `<text x="${X(v)}" y="${H-P+14}" text-anchor="middle" font-size="10" fill="var(--ink-3)">${l}</text>`).join("")}
+    <text x="${(W+P)/2}" y="${H-2}" text-anchor="middle" font-size="10" fill="var(--ink-2)">urgência →</text>
+    <text transform="translate(10 ${(H-P)/2}) rotate(-90)" text-anchor="middle" font-size="10" fill="var(--ink-2)">importância →</text>
+    ${dots}</svg>`;
+}
+
+function logList(limit) {
+  const u = undoneIds(); const items = [...log].reverse().filter(e => e.tipo !== "desfazer").slice(0, limit);
+  if (!items.length) return `<p class="empty">Ainda sem ações. Cada clique fica aqui, com hora, e pode ser desfeito.</p>`;
+  return `<ul class="log">${items.map(e => `<li class="${u.has(e.id)?"undone":""}"><time>${hhmm(e.ts)}</time><span><b>${esc(nameOf(e.ben))}</b> · ${ACT[e.tipo]}${e.detalhe?": "+esc(e.detalhe):""}</span>${u.has(e.id)?"<span>desfeito</span>":`<button class="undo" data-undo="${e.id}">Desfazer</button>`}</li>`).join("")}</ul>`;
+}
+
+function renderTriagem() {
+  const list = bens(); const by = k => list.filter(b => b.decisao.urgencia === k);
+  const gapHouses = list.filter(b => b.saude.gaps.some(g => g.horas > 3) || b.saude.baterias.length).length;
+  $("#view-triagem").innerHTML = `
+    <h1 class="question">Em quem pensar esta semana, o que fazer e o que ignorar.</h1>
+    <p class="sub">${list.length} beneficiários com kit IoT · sinais calculados de 26-out a 22-nov contra a linha de base de cada pessoa (semana 1) · ${gapHouses} casas com lacunas de dados assinaladas.</p>
+    <div class="summary">${["hoje","48h","semana","nenhuma"].map(k => `<a class="sum" href="#lane-${k}" style="--c:${URG[k].c};text-decoration:none;color:inherit"><span class="n">${by(k).length}</span><span class="l">${URG[k].lane}</span><span class="who">${by(k).map(b => b.nome.split(" ")[0]).join(", ") || "—"}</span></a>`).join("")}</div>
+    <div class="grid">
+      <div>${["hoje","48h","semana","nenhuma"].filter(k => by(k).length).map(k => `<section class="lane" id="lane-${k}"><h2 style="--c:${URG[k].c}"><i></i>${URG[k].lane} <small>${k==="nenhuma"?"revisto e decidido não escalar":k==="hoje"?"ligar, não mensagem":""}</small></h2><div class="cards">${by(k).map(card).join("")}</div></section>`).join("")}</div>
+      <aside class="side">
+        <div class="panel"><h3>Importância × urgência</h3><p class="hint">Importância = gravidade do sinal + vulnerabilidade (vive sozinho, risco de queda, dependência). Toque para ver a evidência.</p>${matrix(list)}</div>
+        <div class="panel"><h3>Registo de ações</h3><p class="hint">Desfazer cria um novo registo; nada é apagado.</p>${logList(8)}</div>
+      </aside>
+    </div>`;
+}
+
+/* ---------- qualidade dos dados */
+function renderDados() {
+  const T = DATA.totais;
+  $("#view-dados").innerHTML = `
+    <h1 class="question">Podemos confiar nestes dados?</h1>
+    <p class="sub">Todos os eventos ligam a um dispositivo e a um beneficiário (${T.dispositivos} dispositivos, 20 por casa). Os problemas estão nos valores e nas lacunas, não na estrutura.</p>
+    <div class="q-head">
+      <div class="sum" style="--c:var(--ink)"><span class="n">${T.eventos_brutos.toLocaleString("pt-PT")}</span><span class="l">eventos recebidos</span></div>
+      <div class="sum" style="--c:var(--u-hoje)"><span class="n">${T.removidos}</span><span class="l">removidos por regras de limpeza</span></div>
+      <div class="sum" style="--c:var(--u-48)"><span class="n">${DATA.nao_problemas.length}</span><span class="l">situações que parecem problema mas não são</span></div>
+    </div>
+    <h2 class="sect">Regras de limpeza aplicadas</h2>
+    <div class="tablewrap"><table><thead><tr><th>Regra</th><th>Problema</th><th>Regra aplicada</th><th style="text-align:right">Eventos</th><th>Exemplo</th></tr></thead><tbody>
+      ${DATA.limpeza.map(r => `<tr><td><code>${r.id}</code></td><td>${esc(r.problema)}</td><td>${esc(r.regra)}</td><td class="num">${r.n}</td><td><code>${esc(r.exemplo||"")}</code></td></tr>`).join("")}
+    </tbody></table></div>
+    <h2 class="sect">Parece um problema, mas não é (ou não é clínico)</h2>
+    <div class="tablewrap"><table><thead><tr><th>Situação</th><th>Onde</th><th>Decisão</th></tr></thead><tbody>
+      ${DATA.nao_problemas.map(r => `<tr><td><b>${esc(r.caso)}</b></td><td><code>${esc(r.onde)}</code></td><td>${esc(r.decisao)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <h2 class="sect">Saúde do kit por casa</h2>
+    <div class="houses">${DATA.beneficiarios.slice().sort((a,b)=>a.id.localeCompare(b.id)).map(b => `<div class="house">
+      <div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(b.nome)}</b><code style="font-family:var(--f-mono);font-size:11px;color:var(--ink-3)">${b.id}</code></div>
+      <div><span class="up">${b.saude.uptime}%</span> <span style="color:var(--ink-3)">horas com gateway ligado</span></div>
+      <div class="meter"><i style="width:${b.saude.uptime}%"></i></div>
+      ${b.saude.gaps.map(g => `<div>${g.horas > 3 ? "⚠ " : ""}Sem ligação ${g.horas} h · ${esc(g.inicio.slice(5))} → ${esc(g.fim.slice(11))}</div>`).join("")}
+      ${b.saude.parcial ? `<div>Dispositivo desligado ${b.saude.parcial_horas} h (19/20) · ${esc(b.saude.parcial)}</div>` : ""}
+      ${b.saude.baterias.map(x => `<div>Bateria ${x.min}% · ${esc(x.dispositivo)} · ${esc(x.periodo)}</div>`).join("")}
+      ${!b.saude.gaps.length && !b.saude.parcial && !b.saude.baterias.length ? `<div style="color:var(--u-ok)">Sem falhas</div>` : ""}
+    </div>`).join("")}</div>`;
+}
+
+function renderRegisto() {
+  $("#view-registo").innerHTML = `<h1 class="question">Registo de ações</h1>
+    <p class="sub">Registo só de acrescentar: cada decisão da RM fica com hora; desfazer é também um registo. Na plataforma, isto é a trilha de auditoria (quem decidiu o quê, com que evidência).</p>
+    <div class="panel">${logList(200)}</div>
+    <p class="sub" style="margin-top:12px"><button class="btn" id="reset">Limpar registo desta demonstração</button> <span id="reset-confirm" hidden>Apagar ${log.length} registos? <button class="btn" id="reset-yes">Sim, limpar</button> <button class="btn ghost" id="reset-no">Cancelar</button></span></p>`;
+  $("#reset").onclick = () => $("#reset-confirm").hidden = false;
+  $("#reset-no") && ($("#reset-no").onclick = () => $("#reset-confirm").hidden = true);
+  $("#reset-yes") && ($("#reset-yes").onclick = () => { log = []; save(); render(); toast("Registo limpo"); });
+}
+
+/* ---------- gaveta de evidência */
+let openId = null;
+function openDrawer(id) { openId = id; renderDrawer(); }
+function closeDrawer() { openId = null; $("#drawer-root").innerHTML = ""; clearInterval(replayTimer); }
+let replayTimer;
+function renderDrawer() {
+  const b = DATA.beneficiarios.find(x => x.id === openId); if (!b) return;
+  const metrics = Object.keys(MET).filter(m => b.sinais[m].some(v => v != null && v !== 0));
+  const hit = new Set(b.flags.map(f => f.metric));
+  const order = [...metrics.filter(m => hit.has(m)), ...metrics.filter(m => !hit.has(m))];
+  const fall = b.id === "BEN-005" ? fallSection() : "";
+  const ladder = [...b.contactos_todos.map(c => `${esc(c.nome)} <i>(${esc(c.relacao.toLowerCase())}, ${esc(c.canal)})</i>`), `RM ${esc(b.rm.nome)}`];
+  $("#drawer-root").innerHTML = `<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="Evidência de ${esc(b.nome)}">
+    <button class="close" data-close>Fechar</button>
+    <h2>${esc(b.nome)}</h2><div class="c-meta">${b.idade} anos · ${esc(b.local)} · ${esc(b.rm.nome)} · contrato ${b.contrato.horas} h/semana</div>
+    <p class="resumo" style="margin-top:10px">${esc(b.decisao.porque)}</p>
+    ${fall}
+    <div class="sec"><h3>Sinais diários · 26-out → 22-nov</h3>
+      <p class="hint" style="font-size:12px;color:var(--ink-3);margin:-4px 0 8px">Tracejado = média da semana 1 (linha de base da pessoa). Zona riscada = sem dados (não é zero).</p>
+      <div class="charts">${order.map(m => { const s = b.semanas[m]; const last = s[3] ?? s[2]; return `<div class="chart ${hit.has(m)?"hit":""}"><div class="h"><span>${MET[m].l}</span><b>${last ?? "—"} ${MET[m].u}</b></div>${spark(b.sinais[m], {w:200,h:46,big:true,color:hit.has(m)?SEVC[Math.max(...b.flags.filter(f=>f.metric===m).map(f=>f.sev))]:"var(--ink-2)"})}<div class="h"><span>sem. 1: ${s[0] ?? "—"}</span><span>sem. 4: ${s[3] ?? "—"}</span></div></div>`; }).join("")}</div></div>
+    <div class="sec"><h3>Regras disparadas</h3>${b.flags.length ? b.flags.map(f => `<div style="font-size:13px;padding:4px 0"><code style="font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)">${f.regra}</code> <b>${esc(f.titulo)}</b>: ${esc(f.evidencia)}</div>`).join("") : `<p class="empty">Nenhuma regra disparou.</p>`}</div>
+    <div class="sec"><h3>Escalonamento</h3><div class="ladder">${ladder.map((x,i) => `<span>${i+1}. ${x}</span>`).join("<i>→</i>")}</div>
+      <p class="hint" style="font-size:12px;color:var(--ink-3)">Regra de canal: urgência "hoje" é sempre por telefone, mesmo que o canal preferido seja mensagem ou email.</p></div>
+    <div class="sec"><h3>Contexto clínico</h3><dl class="kv">
+      <dt>Condições</dt><dd>${esc(b.condicoes)}</dd><dt>Mobilidade</dt><dd>${esc(b.mobilidade)} · risco de queda ${esc(b.risco_queda.toLowerCase())}</dd>
+      <dt>Notas</dt><dd>${esc(b.notas)}</dd><dt>Medicação</dt><dd>${b.medicacao.map(esc).join("<br>")}</dd>
+      ${b.ocorrencias.map(o => `<dt>${esc(o.data)} · ${esc(o.tipo)}</dt><dd>${esc(o.texto)}</dd>`).join("")}</dl></div>
+    <div class="sec"><h3>Confiança nos dados desta casa</h3><p style="margin:0;font-size:13px">${esc(b.decisao.confianca_nota)}</p></div>
+  </aside>`;
+  $(".close").focus();
+}
+function fallSection() {
+  return `<div class="sec"><h3>Reconstituição da queda de 12-nov</h3>
+    <div class="compare"><div class="was"><b>2 h 23 min</b><small>no chão sem alerta: a pulseira detetou às 15:42, a cuidadora chegou às 18:05</small></div>
+      <div class="now"><b>≈ 1 min</b><small>com a regra R10: queda ≥ 0,8 sem retomar marcha → chamada imediata à RM e à sobrinha</small></div></div>
+    <div class="replay"><button class="btn primary" id="replay">▶ Reproduzir a tarde</button><span class="clock" id="clock">15:40</span></div>
+    <div id="alert" hidden class="alertbox"><b>Alerta R10 · 15:43</b> · Isabel Martins: queda detetada (confiança 0,94), sem passos depois. Ligar à Sofia Martins (sobrinha), +351 910 000 501.</div>
+    <ol class="timeline" id="tl"></ol></div>`;
+}
+function runReplay() {
+  const evs = DATA.queda_005.filter(e => ["queda_detetada","frequencia_cardiaca","porta"].includes(e.tipo) || (e.tipo==="movimento" && e.v==1));
+  const label = e => e.tipo==="queda_detetada" ? `Pulseira deteta queda (confiança ${e.v})` : e.tipo==="frequencia_cardiaca" ? `Freq. cardíaca ${e.v} bpm` : e.tipo==="porta" ? (e.v==1?"Porta de entrada abre: chega a cuidadora":"Porta fecha") : `Movimento · ${e.loc}`;
+  const tl = $("#tl"); tl.innerHTML = ""; $("#alert").hidden = true; clearInterval(replayTimer);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches; let i = 0;
+  const step = () => {
+    if (i >= evs.length) { clearInterval(replayTimer); tl.insertAdjacentHTML("beforeend", `<li class="gap"><time>18:05</time><span>Encontrada no chão da sala (ocorrência OCO-007)</span></li>`); return; }
+    const e = evs[i++]; $("#clock").textContent = e.t;
+    if (e.t >= "15:43") $("#alert").hidden = false;
+    tl.insertAdjacentHTML("beforeend", `<li class="${e.tipo==="queda_detetada"||e.tipo==="porta"?"key":""}"><time>${e.t}</time><span>${esc(label(e))}</span></li>`);
+  };
+  if (reduce) { while (i <= evs.length) step(); } else replayTimer = setInterval(step, 280);
+}
+
+/* ---------- render e eventos */
+let VIEW = "triagem";
+function render() {
+  $("#week").textContent = `Semana ${DATA.periodo.semana_atual} 2026`;
+  if (VIEW === "triagem") renderTriagem(); else if (VIEW === "dados") renderDados(); else renderRegisto();
+  if (openId && VIEW === "triagem") {}
+}
+function setView(v) {
+  VIEW = v; document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  ["triagem","dados","registo"].forEach(k => $("#view-"+k).hidden = k !== v); render(); window.scrollTo(0,0);
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act],[data-undo],[data-open],[data-close],[data-ignore],[data-srv],[data-copy],[data-view],#replay");
+  if (!t) return;
+  if (t.dataset.view) return setView(t.dataset.view);
+  if (t.id === "replay") return runReplay();
+  if (t.dataset.close !== undefined) return closeDrawer();
+  if (t.dataset.open) return openDrawer(t.dataset.open);
+  if (t.dataset.undo) return undo(t.dataset.undo);
+  if (t.dataset.ignore) { const r = $("#reasons-"+t.dataset.ignore); r.hidden = !r.hidden; return; }
+  if (t.dataset.act) return act(t.dataset.ben, t.dataset.act, t.dataset.detail || "");
+  if (t.dataset.srv) { const on = t.getAttribute("aria-pressed") === "true"; return act(t.dataset.ben, on ? "servico_off" : "servico", t.dataset.srv); }
+  if (t.dataset.copy) { const v = t.dataset.copy; navigator.clipboard?.writeText(v).then(() => toast("Número copiado: "+v), () => toast("Selecione o número para copiar")); }
+});
+$("#rm").innerHTML = `<option value="todas">Todas</option>` + DATA.rms.map(r => `<option value="${r.id}">${esc(r.nome)}</option>`).join("");
+$("#rm").onchange = e => { RM = e.target.value; render(); };
+document.body.insertAdjacentHTML("afterbegin", `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="var(--surface)"/><line x1="0" y1="0" x2="0" y2="4" stroke="var(--line-2)" stroke-width="1.5"/></pattern></defs></svg>`);
+render();
+</script>

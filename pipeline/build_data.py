@@ -287,6 +287,20 @@ for _, b in ben.iterrows():
     ficha = fic.set_index("beneficiario_id").loc[bid]
     sig = {m: series(bid, m) for m in S}
     flags = run_rules(bid, sig, ficha)
+    for e in crit_events.get(bid, []):  # R10 eventos críticos da pulseira / fumo
+        when = pd.Timestamp(e["ts"]).strftime("%d-%b %H:%M")
+        if e["tipo"] == "queda_detetada" and e["valor"] >= 0.8:
+            flags.append(dict(sev=3, regra="R10", titulo=f"Queda detetada {when} (confiança {e['valor']:.2f})",
+                              evidencia="Pouco movimento e FC 99→112 a seguir. Ninguém foi avisado: encontrada às 18:05 pela cuidadora.", metric="queda"))
+        elif e["tipo"] == "queda_detetada":
+            flags.append(dict(sev=0, regra="R10x", titulo=f"Queda {when} · confiança {e['valor']:.2f}",
+                              evidencia=f"Abaixo de 0,8 e {e['passos_15min']} passos nos 15 min seguintes: falso positivo.", metric=None))
+        elif e["tipo"] == "sos":
+            flags.append(dict(sev=0, regra="R11", titulo=f"SOS {when} revisto",
+                              evidencia=f"FC {e['fc_depois'][0]:.0f} e {e['passos_15min']} passos logo a seguir: provável toque acidental. Confirmar.", metric=None))
+        elif e["tipo"] == "alarme_fumo" and e["valor"] == 1:
+            flags.append(dict(sev=1, regra="R12", titulo=f"Alarme de fumo {when} (6 min)",
+                              evidencia="Reposto com movimento na cozinha. Contexto: utente com défice cognitivo.", metric=None))
     d = DECISION[bid]
     cmap = con.set_index("contacto_id")
     contacts = []
@@ -352,7 +366,14 @@ data = clean(data)
 OUT_JSON.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 if TEMPLATE.exists():
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", json.dumps(data, ensure_ascii=False))
-    OUT_HTML.write_text(html, encoding="utf-8")
+    # fragmento (pré-visualização) + documento completo para a Vercel
+    (ROOT / "webapp" / ".preview.html").write_text(html, encoding="utf-8")
+    full = ('<!doctype html>\n<html lang="pt-PT">\n<head>\n<meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            '<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}'
+            'body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>\n</head>\n<body>\n'
+            + html + '\n</body>\n</html>\n')
+    OUT_HTML.write_text(full, encoding="utf-8")
 print(f"ok · {len(raw)} → {len(ev)} eventos · {OUT_JSON.stat().st_size//1024} KB")
 for b in out_ben:
     print(b["id"], b["decisao"]["urgencia"], b["score"]["total"], [f"{f['regra']}:{f['titulo']}" for f in b["flags"]])

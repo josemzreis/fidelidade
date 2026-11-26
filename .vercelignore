@@ -1,0 +1,5 @@
+webapp/app.template.html
+webapp/.preview.html
+pipeline/
+*.xlsx
+*.pdf
